@@ -4,6 +4,11 @@ import torch
 from flwr.client import NumPyClient, ClientApp
 from flwr.common import Context
 
+from deepcompfedl.compression.pruning import prune
+from deepcompfedl.compression.quantization import quantize
+from deepcompfedl.compression.encoding import encode
+from deepcompfedl.compression.decoding import decode
+
 from deepcompfedl.task import (
     Net,
     load_data,
@@ -39,7 +44,6 @@ class FlowerClient(NumPyClient):
         loss, accuracy = test(self.net, self.valloader, self.device)
         return loss, len(self.valloader.dataset), {"accuracy": accuracy}
 
-
 def client_fn(context: Context):
     # Load model and data
     net = Net()
@@ -51,13 +55,13 @@ def client_fn(context: Context):
     client = FlowerClient(net, trainloader, valloader, local_epochs).to_client()
 
     # Apply Pruning
-    client.prune()
+    prune(client)
     
     # Apply Quantization
-    client.quantize()    
+    quantize(client)    
 
     # Return Encoded Client
-    return client.encode()
+    return encode(client)
 
 
 # Flower ClientApp
