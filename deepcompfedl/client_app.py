@@ -48,8 +48,16 @@ def client_fn(context: Context):
     trainloader, valloader = load_data(partition_id, num_partitions)
     local_epochs = context.run_config["local-epochs"]
 
-    # Return Client instance
-    return FlowerClient(net, trainloader, valloader, local_epochs).to_client()
+    client = FlowerClient(net, trainloader, valloader, local_epochs).to_client()
+
+    # Apply Pruning
+    client.prune()
+    
+    # Apply Quantization
+    client.quantize()    
+
+    # Return Encoded Client
+    return client.encode()
 
 
 # Flower ClientApp
