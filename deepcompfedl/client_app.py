@@ -6,8 +6,8 @@ from flwr.common import Context
 
 from deepcompfedl.compression.pruning import prune
 from deepcompfedl.compression.quantization import quantize
-from deepcompfedl.compression.encoding import encode
-from deepcompfedl.compression.decoding import decode
+# from deepcompfedl.compression.encoding import encode
+# from deepcompfedl.compression.decoding import decode
 
 from deepcompfedl.task import (
     Net,
@@ -17,7 +17,6 @@ from deepcompfedl.task import (
     train,
     test,
 )
-
 
 # Define Flower Client and client_fn
 class FlowerClient(NumPyClient):
@@ -52,16 +51,20 @@ def client_fn(context: Context):
     trainloader, valloader = load_data(partition_id, num_partitions)
     local_epochs = context.run_config["local-epochs"]
 
-    client = FlowerClient(net, trainloader, valloader, local_epochs).to_client()
+    client = FlowerClient(net, trainloader, valloader, local_epochs)
 
     # Apply Pruning
-    prune(client)
+    prune(client.net)
     
     # Apply Quantization
-    quantize(client)    
+    # quantize(client.net)    
 
     # Return Encoded Client
-    return encode(client)
+    # encode(client)
+    
+    # pretty_parameters(client.net)
+    
+    return client.to_client()
 
 
 # Flower ClientApp
