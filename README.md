@@ -9,7 +9,7 @@ Feel free to contact me for any questions, and to fork this repository to improv
 
 All the code was written and executed in a Linux environment (´Ubuntu Mate 22.04´), with a `Python 3.10` version.
 
-Requirements for the <i>Flower Framework</i> can be found in the `pyproject.toml` file. To install related dependences, execute this command:
+Requirements for the <i>Flower Framework</i> can be found in the `pyproject.toml` file. To install related dependencies, execute this command:
 
 ```bash
 pip install -e .
@@ -24,5 +24,10 @@ In the `DeepCompFedL` directory, use `flwr run` to run a local simulation:
 flwr run .
 ```
 
+## Debugging
 
-
+It might be that at the first execution, you get such an Exception: `Exception ClientAppException occured. Message: module 'PIL.Image' has no attribute 'ExifTags'`. If so, simply update the package `pillow` by executing this command:
+```bash
+pip install --upgrade pillow
+```
+which should solve this issue.
