@@ -31,3 +31,13 @@ It might be that at the first execution, you get such an Exception: `Exception C
 pip install --upgrade pillow
 ```
 which should solve this issue.
+
+Please also pay attention to the number of available CPUs and GPUs, defined at the end of the `pyproject.toml` file.
+- If you works on Linux/Mac, to know the number of CPUs you can use, simply type `nproc` in a terminal.
+- To know if you can use the GPU, run a python environment and try these lines:
+```python
+import torch
+torch.cuda.is_available()
+```
+If `cuda` is available, then it should be ok. Else, either set the number of available GPUs to 0 or google your problem :\)
+
