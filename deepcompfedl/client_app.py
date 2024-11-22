@@ -59,12 +59,12 @@ def client_fn(context: Context):
     prune(client.net, pruning_rate)
     
     # Print stats for pruning
-    print(f"Effective pruning (for client {partition_id}):")
-    pruned_weights(client.net)
-    print("")
+    # print(f"Effective pruning (for client {partition_id}):")
+    # pruned_weights(client.net)
+    # print("")
     
     # Apply Quantization
-    # quantize(client.net)    
+    quantize(client.net)    
 
     # Return Encoded Client
     # encode(client)
