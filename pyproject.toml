@@ -12,6 +12,8 @@ dependencies = [
     "flwr-datasets[vision]>=0.3.0",
     "torch==2.2.1",
     "torchvision==0.17.1",
+    "scipy>=1.14.1",
+    "scikit-learn>=1.5.2"
 ]
 
 [tool.hatch.build.targets.wheel]
