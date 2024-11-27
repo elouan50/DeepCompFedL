@@ -9,7 +9,7 @@ from sklearn.cluster import KMeans
 from scipy.sparse import csc_matrix, csr_matrix
 
 
-def quantize(net, nbits : int = 8):
+def quantize_layers(net, nbits : int = 8):
     """
     Applies weight sharing to the given model.
     Encompasses weights in 2**n clusters.

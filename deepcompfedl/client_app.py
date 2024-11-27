@@ -5,10 +5,12 @@ from flwr.client import NumPyClient, ClientApp
 from flwr.common import Context
 
 from deepcompfedl.compression.pruning import prune
-from deepcompfedl.compression.quantization import quantize
-# from deepcompfedl.compression.encoding import encode
-# from deepcompfedl.compression.decoding import decode
+from deepcompfedl.compression.quantization import quantize_layers
+from deepcompfedl.compression.encoding import encode
+from deepcompfedl.compression.decoding import decode
 from deepcompfedl.compression.metrics import pruned_weights
+
+from deepcompfedl.compression.utils import pretty_parameters
 
 from deepcompfedl.task import (
     Net,
@@ -50,8 +52,9 @@ def client_fn(context: Context):
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
     trainloader, valloader = load_data(partition_id, num_partitions)
-    local_epochs = context.run_config["local-epochs"]
-    pruning_rate = context.run_config["pruning-rate"]
+    local_epochs = context.run_config["client-epochs"]
+    pruning_rate = context.run_config["client-pruning-rate"]
+    bits_quantization = context.run_config["client-bits-quantization"]
 
     client = FlowerClient(net, trainloader, valloader, local_epochs)
 
@@ -64,8 +67,12 @@ def client_fn(context: Context):
     # print("")
     
     # Apply Quantization
-    quantize(client.net)    
+    quantize_layers(client.net, bits_quantization)
 
+    if partition_id==0:
+        pretty_parameters(client.net)
+    
+    
     # Return Encoded Client
     # encode(client)
     
