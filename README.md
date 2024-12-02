@@ -7,7 +7,7 @@ Feel free to contact me for any questions, and to fork this repository to improv
 
 ## Install dependencies and project
 
-All the code was written and executed in a Linux environment (´Ubuntu Mate 22.04´), with a `Python 3.10` version.
+All the code was written and executed in a Linux environment (`Ubuntu Mate 22.04`), with a `Python 3.10` version.
 
 Requirements for the <i>Flower Framework</i> can be found in the `pyproject.toml` file. To install related dependencies, execute this command:
 
@@ -24,7 +24,18 @@ In the `DeepCompFedL` directory, use `flwr run` to run a local simulation:
 flwr run .
 ```
 
-## Debugging
+## Run the framework starting from the interface
+
+The interface allows to modify parameters in a more intuitive manner.
+
+In the `DeepCompFedL` directory, execute the `interface.py` file:
+```bash
+python3 interface.py
+```
+Beware, for the moment all parameters are not truly used during the execution.
+TODO: implement use of the parameters, and also eventually add some others.
+
+# Troubleshooting
 
 It might be that at the first execution, you get such an Exception: `Exception ClientAppException occured. Message: module 'PIL.Image' has no attribute 'ExifTags'`. If so, simply update the package `pillow` by executing this command:
 ```bash
@@ -39,5 +50,10 @@ Please also pay attention to the number of available CPUs and GPUs, defined at t
 import torch
 torch.cuda.is_available()
 ```
-If `cuda` is available, then it should be ok. Else, either set the number of available GPUs to 0 or google your problem :\)
+or for more informations:
+```bash
+nvidia-smi
+```
+
+If `cuda` is available, then it should be ok. Else, either set the number of available GPUs to 0 or try to google your problem :\)
 
