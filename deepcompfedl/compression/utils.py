@@ -15,16 +15,6 @@ def get_tensor_parameters(model):
     from flwr.common.parameter import ndarrays_to_parameters
     return ndarrays_to_parameters([val.cpu().numpy() for _, val in model.state_dict().items()])
 
-def get_params(model: torch.nn.ModuleList) -> List[np.ndarray]:
-    """Get model weights as a list of NumPy ndarrays."""
-    return [val.cpu().numpy() for _, val in model.state_dict().items()]
-
-def set_params(model: torch.nn.ModuleList, params: List[np.ndarray]):
-    """Set model weights from a list of NumPy ndarrays."""
-    params_dict = zip(model.state_dict().keys(), params)
-    state_dict = OrderedDict({k: torch.from_numpy(np.copy(v)) for k, v in params_dict})
-    model.load_state_dict(state_dict, strict=True)
-
 
 def tell_history(hist,file_name : str, infos = None,path : str = "",head=None):
 
