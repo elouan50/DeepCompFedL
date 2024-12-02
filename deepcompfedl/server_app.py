@@ -9,8 +9,8 @@ from deepcompfedl.task import Net, get_weights
 
 def server_fn(context: Context):
     # Read from config
-    num_rounds = context.run_config["num-server-rounds"]
-    fraction_fit = context.run_config["fraction-fit"]
+    num_rounds = context.run_config["server-rounds"]
+    fraction_fit = context.run_config["server-fraction-fit"]
 
     # Initialize model parameters
     ndarrays = get_weights(Net())

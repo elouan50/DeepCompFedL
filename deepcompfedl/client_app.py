@@ -1,14 +1,15 @@
 """DeepCompFedL: A Flower / PyTorch app."""
 
+import os
 import torch
 from flwr.client import NumPyClient, ClientApp
 from flwr.common import Context
 
 from deepcompfedl.compression.pruning import prune
-from deepcompfedl.compression.quantization import quantize
-# from deepcompfedl.compression.encoding import encode
-# from deepcompfedl.compression.decoding import decode
-from deepcompfedl.compression.metrics import pruned_weights
+from deepcompfedl.compression.quantization import quantize_layers, quantize_model
+from deepcompfedl.compression.encoding import encode
+from deepcompfedl.compression.decoding import decode
+from deepcompfedl.compression.metrics import pruned_weights, quantized_model, quantized_layers
 
 from deepcompfedl.task import (
     Net,
@@ -45,31 +46,51 @@ class FlowerClient(NumPyClient):
         return loss, len(self.valloader.dataset), {"accuracy": accuracy}
 
 def client_fn(context: Context):
-    # Load model and data
+    ### Load model and data
     net = Net()
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
     trainloader, valloader = load_data(partition_id, num_partitions)
-    local_epochs = context.run_config["local-epochs"]
-    pruning_rate = context.run_config["pruning-rate"]
+    local_epochs = context.run_config["client-epochs"]
+    pruning_rate = context.run_config["client-pruning-rate"]
+    bits_quantization = context.run_config["client-bits-quantization"]
 
+    ### Create saving directory
+    # save_dir = "deepcompfedl/saves/"
+    # os.makedirs(save_dir, exist_ok=True)
+    
     client = FlowerClient(net, trainloader, valloader, local_epochs)
 
-    # Apply Pruning
-    prune(client.net, pruning_rate)
-    
-    # Print stats for pruning
-    print(f"Effective pruning (for client {partition_id}):")
-    pruned_weights(client.net)
-    print("")
-    
-    # Apply Quantization
-    # quantize(client.net)    
 
-    # Return Encoded Client
-    # encode(client)
+    ### Apply Pruning
+    prune(client.net, pruning_rate)
+    # torch.save(client.net.to_sparse(), save_dir+"sparse_pruned_model.ptmodel")
+
+    ## Print stats for pruning
+    # print(f"Effective pruning (for client {partition_id}):")
+    # pruned_weights(client.net)
+    # print("")
     
-    # pretty_parameters(client.net)
+    
+    ### Apply Quantization
+    ## Layer-wise
+    # quantize_layers(client.net, bits_quantization)
+    # if partition_id == 0:
+    #     print(f"Effective quantization (for client {partition_id}):")
+    #     quantized_layers(client.net)
+    #     print("")
+    
+    ## Model-wise
+    quantize_model(client.net, bits_quantization)
+    if partition_id == 0:
+        print(f"Effective quantization (for client {partition_id}):")
+        quantized_model(client.net)
+        print("")
+
+    
+    
+    ### Return Encoded Client
+    # encode(client)
     
     return client.to_client()
 
