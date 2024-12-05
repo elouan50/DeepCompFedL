@@ -31,8 +31,8 @@ server-rounds = 3
 server-fraction-fit = 0.5
 server-pruning-rate = 0.25       # not used
 server-bits-quantization = 4     # not used
-aggregation-algorithm = "FedAvg" # not used
-client-epochs = 5
+aggregation-strategy = "FedAvg"  # not used
+client-epochs = 1
 client-pruning-rate = 0.25
 client-bits-quantization = 4
 

@@ -35,7 +35,7 @@ def quantized_model(net):
                     list_weights.append(w.item())
     
     print(f"There are {len(list_weights)-1} different weights different than 0 in the model.")
-    # print(f"These weights are: {list_weights}")
+    print(f"These weights are: {list_weights[1:]}")
 
 def quantized_layers(net):
     for module in net.children():
