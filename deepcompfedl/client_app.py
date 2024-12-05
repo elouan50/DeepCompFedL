@@ -50,12 +50,15 @@ def client_fn(context: Context):
     net = Net()
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
-    trainloader, valloader = load_data(partition_id, num_partitions)
+    dataset = context.run_config["dataset"]
+    trainloader, valloader = load_data(partition_id, num_partitions, dataset)
     local_epochs = context.run_config["client-epochs"]
+    enable_pruning = context.run_config["client-enable-pruning"]
     pruning_rate = context.run_config["client-pruning-rate"]
+    enable_quantization = context.run_config["client-enable-quantization"]
     bits_quantization = context.run_config["client-bits-quantization"]
 
-    ### Create saving directory
+    # ### Create saving directory
     # save_dir = "deepcompfedl/saves/"
     # os.makedirs(save_dir, exist_ok=True)
     
@@ -63,29 +66,30 @@ def client_fn(context: Context):
 
 
     ### Apply Pruning
-    prune(client.net, pruning_rate)
-    # torch.save(client.net.to_sparse(), save_dir+"sparse_pruned_model.ptmodel")
+    if enable_pruning:
+        prune(client.net, pruning_rate)
 
-    ## Print stats for pruning
-    # print(f"Effective pruning (for client {partition_id}):")
-    # pruned_weights(client.net)
-    # print("")
+        ## Print stats for pruning
+        print(f"Effective pruning (for client {partition_id}):")
+        pruned_weights(client.net)
+        print("")
     
     
     ### Apply Quantization
     ## Layer-wise
-    # quantize_layers(client.net, bits_quantization)
-    # if partition_id == 0:
-    #     print(f"Effective quantization (for client {partition_id}):")
-    #     quantized_layers(client.net)
-    #     print("")
+    if enable_quantization:
+        quantize_layers(client.net, bits_quantization)
+        if partition_id == 0:
+            print(f"Effective quantization (for client {partition_id}):")
+            quantized_layers(client.net)
+            print("")
     
     ## Model-wise
-    quantize_model(client.net, bits_quantization)
-    if partition_id == 0:
-        print(f"Effective quantization (for client {partition_id}):")
-        quantized_model(client.net)
-        print("")
+    # quantize_model(client.net, bits_quantization)
+    # if partition_id == 0:
+    #     print(f"Effective quantization (for client {partition_id}):")
+    #     quantized_model(client.net)
+    #     print("")
 
     
     
