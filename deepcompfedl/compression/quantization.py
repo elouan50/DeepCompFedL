@@ -53,15 +53,12 @@ def quantize_layers(net, nbits : int = 8):
                 new_flattened = mat.toarray()
                 
                 # Regiving the matrix of weights its original shape
-                i = 0
-                j = 0
-                k = 0
-                for k in range(new_flattened.shape[0]):
-                    if j==shape[1]:
-                        j = 0
-                        i += 1
-                    weight[i,j,:,:] = new_flattened[i*shape[0]+j*shape[1]:i*shape[0]+j*shape[1]+5, :]
-                    k += 1
+                index = 0
+                for i in range(shape[0]):
+                    for j in range(shape[1]):
+                        for k in range(shape[2]):
+                            weight[i,j,k,:] = new_flattened[index,:] 
+                            index += 1
                 
                 # Updating the original model
                 module.weight.data = torch.from_numpy(weight).to(dev)
