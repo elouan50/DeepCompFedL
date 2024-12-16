@@ -117,7 +117,7 @@ server_quantization_entry.grid(row=2, column=2, sticky="W")
 # Aggregation strategy
 ttk.Label(server_frame, text="Aggregation strategy:").grid(row=3, column=0, sticky="W")
 agg_strategy_var = tk.StringVar(value="FedAvg")
-agg_strategy_menu = ttk.Combobox(server_frame, textvariable=agg_strategy_var, values=["FedAvg", "other (None)"], state="readonly")
+agg_strategy_menu = ttk.Combobox(server_frame, textvariable=agg_strategy_var, values=["FedAvg", "MyStrategy", "other (None)"], state="readonly")
 agg_strategy_menu.grid(row=3, column=2, sticky="W")
 
 
