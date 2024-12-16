@@ -1,5 +1,7 @@
 """DeepCompFedL: A Flower / PyTorch app."""
 
+from pympler import asizeof
+
 from deepcompfedl.task import get_weights
 
 import numpy as np
@@ -18,7 +20,7 @@ def pruned_weights(net):
         count_total += total
         count_zeros += zeros
         
-        print(f"For layer {i}, {round(zeros/total*100,2)}% pruning (over {total} parameters).")
+        print(f"For layer {i}, {round(zeros/total*100,4)}% pruning (over {total} parameters).")
     
     print(f"Global pruning: {round(count_zeros/count_total*100,2)}%")
 
@@ -50,3 +52,8 @@ def quantized_layers(net):
     
         print(f"    Layer {module.__class__.__name__}: there are {len(list_weights)-1} different weights different than 0.")
         # print(f"These weights are: {list_weights}")
+
+def size_var(net):
+    size = asizeof.asizeof(net)
+    print(f"This net weights currently {size} bytes.")
+    return size
