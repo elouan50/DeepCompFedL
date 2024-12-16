@@ -12,21 +12,27 @@ from deepcompfedl.compression.decoding import decode
 from deepcompfedl.compression.metrics import pruned_weights, quantized_model, quantized_layers
 
 from deepcompfedl.task import (
-    Net,
     load_data,
     get_weights,
     set_weights,
     train,
     test,
 )
+from deepcompfedl.models.net import Net
+from deepcompfedl.models.resnet12 import ResNet12
 
 # Define Flower Client and client_fn
 class FlowerClient(NumPyClient):
-    def __init__(self, net, trainloader, valloader, local_epochs):
+    def __init__(self, net, trainloader, valloader, local_epochs, enable_pruning, pruning_rate, enable_quantization, bits_quantization, partition_id):
         self.net = net
         self.trainloader = trainloader
         self.valloader = valloader
         self.local_epochs = local_epochs
+        self.enable_pruning = enable_pruning
+        self.pruning_rate = pruning_rate
+        self.enable_quantization = enable_quantization
+        self.bits_quantization = bits_quantization
+        self.partition_id = partition_id
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.net.to(self.device)
 
@@ -38,16 +44,43 @@ class FlowerClient(NumPyClient):
             self.local_epochs,
             self.device,
         )
+        
+        ### Apply Pruning
+        if self.enable_pruning:
+            params = get_weights(self.net)
+            parameters = prune(params, self.pruning_rate)
+            set_weights(self.net, parameters)
+            if self.partition_id == 0:
+                print(f"Effective sent pruning (for client {self.partition_id} in fit):")
+                pruned_weights(self.net)
+                print("")
+        
+        ### Apply Quantization
+        if self.enable_quantization:
+            quantize_layers(self.net, self.bits_quantization)
+            if self.partition_id == 0:
+                print(f"Effective received quantization (for client {self.partition_id}):")
+                quantized_layers(self.net)
+                print("")
+        
         return get_weights(self.net), len(self.trainloader.dataset), {"train_loss": train_loss}
 
     def evaluate(self, parameters, config):
         set_weights(self.net, parameters)
         loss, accuracy = test(self.net, self.valloader, self.device)
+        
+        ### Apply Pruning
+        if self.enable_pruning:
+            ## Print stats for pruning
+            if self.partition_id == 0:
+                print(f"Effective received pruning (for client {self.partition_id} in client_fn):")
+                pruned_weights(self.net)
+                print("")
+                
         return loss, len(self.valloader.dataset), {"accuracy": accuracy}
 
 def client_fn(context: Context):
     ### Load model and data
-    net = Net()
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
     dataset = context.run_config["dataset"]
@@ -57,35 +90,47 @@ def client_fn(context: Context):
     pruning_rate = context.run_config["client-pruning-rate"]
     enable_quantization = context.run_config["client-enable-quantization"]
     bits_quantization = context.run_config["client-bits-quantization"]
+    model_name = context.run_config["model"]
+    
+    if model_name == "Net":
+        net = Net()
+    elif model_name == "ResNet12":
+        net = ResNet12(16, (3,32,32), 10)
+    else:
+        net = None
 
     # ### Create saving directory
     # save_dir = "deepcompfedl/saves/"
     # os.makedirs(save_dir, exist_ok=True)
     
-    client = FlowerClient(net, trainloader, valloader, local_epochs)
-
+    client = FlowerClient(net,
+                          trainloader,
+                          valloader,
+                          local_epochs,
+                          enable_pruning,
+                          pruning_rate,
+                          enable_quantization,
+                          bits_quantization,
+                          partition_id)
 
     ### Apply Pruning
-    if enable_pruning:
-        prune(client.net, pruning_rate)
-
-        ## Print stats for pruning
-        print(f"Effective pruning (for client {partition_id}):")
-        pruned_weights(client.net)
-        print("")
+    # if enable_pruning:
+    #     ## Print stats for pruning
+    #     if partition_id == 0:
+    #         print(f"Effective received pruning (for client {partition_id} in client_fn):")
+    #         pruned_weights(client.net)
+    #         print("")
     
     
     ### Apply Quantization
     ## Layer-wise
     if enable_quantization:
-        quantize_layers(client.net, bits_quantization)
         if partition_id == 0:
-            print(f"Effective quantization (for client {partition_id}):")
+            print(f"Effective received quantization (for client {partition_id}):")
             quantized_layers(client.net)
             print("")
     
     ## Model-wise
-    # quantize_model(client.net, bits_quantization)
     # if partition_id == 0:
     #     print(f"Effective quantization (for client {partition_id}):")
     #     quantized_model(client.net)
