@@ -1,15 +1,19 @@
 """DeepCompFedL: A Flower / PyTorch app."""
 
-import os
+import time
 import torch
+from logging import WARNING
 from flwr.client import NumPyClient, ClientApp
 from flwr.common import Context
+from flwr.common.logger import log
 
 from deepcompfedl.compression.pruning import prune
 from deepcompfedl.compression.quantization import quantize_layers, quantize_model
-from deepcompfedl.compression.encoding import encode
-from deepcompfedl.compression.decoding import decode
-from deepcompfedl.compression.metrics import pruned_weights, quantized_model, quantized_layers
+from deepcompfedl.compression.metrics import (
+    pruned_weights,
+    quantized_model,
+    quantized_layers,
+)
 
 from deepcompfedl.task import (
     load_data,
@@ -37,6 +41,7 @@ class FlowerClient(NumPyClient):
         self.net.to(self.device)
 
     def fit(self, parameters, config):
+        begin = time.perf_counter()
         set_weights(self.net, parameters)
         train_loss = train(
             self.net,
@@ -62,8 +67,9 @@ class FlowerClient(NumPyClient):
                 print(f"Effective received quantization (for client {self.partition_id}):")
                 quantized_layers(self.net)
                 print("")
+        end = time.perf_counter()
         
-        return get_weights(self.net), len(self.trainloader.dataset), {"train_loss": train_loss}
+        return get_weights(self.net), len(self.trainloader.dataset), {"train_loss": train_loss, "time": float((end - begin)*1000)}
 
     def evaluate(self, parameters, config):
         set_weights(self.net, parameters)
@@ -97,11 +103,7 @@ def client_fn(context: Context):
     elif model_name == "ResNet12":
         net = ResNet12(16, (3,32,32), 10)
     else:
-        net = None
-
-    # ### Create saving directory
-    # save_dir = "deepcompfedl/saves/"
-    # os.makedirs(save_dir, exist_ok=True)
+        log(WARNING, "No existing model provided")
     
     client = FlowerClient(net,
                           trainloader,
@@ -113,33 +115,6 @@ def client_fn(context: Context):
                           bits_quantization,
                           partition_id)
 
-    ### Apply Pruning
-    # if enable_pruning:
-    #     ## Print stats for pruning
-    #     if partition_id == 0:
-    #         print(f"Effective received pruning (for client {partition_id} in client_fn):")
-    #         pruned_weights(client.net)
-    #         print("")
-    
-    
-    ### Apply Quantization
-    ## Layer-wise
-    if enable_quantization:
-        if partition_id == 0:
-            print(f"Effective received quantization (for client {partition_id}):")
-            quantized_layers(client.net)
-            print("")
-    
-    ## Model-wise
-    # if partition_id == 0:
-    #     print(f"Effective quantization (for client {partition_id}):")
-    #     quantized_model(client.net)
-    #     print("")
-
-    
-    
-    ### Return Encoded Client
-    # encode(client)
     
     return client.to_client()
 

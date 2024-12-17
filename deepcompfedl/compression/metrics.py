@@ -41,17 +41,26 @@ def quantized_model(net):
 
 def quantized_layers(net):
     for module in net.children():
-        list_weights = [0.]
-        if not(isinstance(module, nn.MaxPool2d)):
+        if isinstance(module, nn.MaxPool2d):
+            pass
+        elif isinstance(module, nn.Sequential):
+            pass
+            # for basicblock in module.children():
+            #     quantized_layers(basicblock)
+        elif isinstance(module, nn.GroupNorm):
+            pass
+        else:
+            print(f"{type(module)} is being examined")
             weight = module.weight.data.cpu().numpy()
             size = np.size(weight)
             layer = np.reshape(weight, (size,1))
+            list_weights = [0.]
             for w in layer:
                 if not(w in list_weights):
                     list_weights.append(w.item())
-    
-        print(f"    Layer {module.__class__.__name__}: there are {len(list_weights)-1} different weights different than 0.")
-        # print(f"These weights are: {list_weights}")
+
+            print(f"    Layer {module.__class__.__name__}: there are {len(list_weights)-1} different weights different than 0.")
+            # print(f"These weights are: {list_weights}")
 
 def size_var(net):
     size = asizeof.asizeof(net)

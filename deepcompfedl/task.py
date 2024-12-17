@@ -117,3 +117,15 @@ def set_weights(net, parameters):
     params_dict = zip(net.state_dict().keys(), parameters)
     state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
     net.load_state_dict(state_dict, strict=True)
+
+def evaluate_metrics_aggregation_fn(eval_metrics):
+    num_total_evaluation_examples = sum(num_examples for (num_examples, _) in eval_metrics)
+    weighted_accuracies = [num_examples * metrics["accuracy"] for num_examples, metrics in eval_metrics]
+    metrics_aggregated = sum(weighted_accuracies) / num_total_evaluation_examples
+    return {"accuracy": float(metrics_aggregated)}
+
+def fit_metrics_aggregation_fn(fit_metrics):
+    num_total_fit_examples = sum(num_examples for (num_examples, _) in fit_metrics)
+    weighted_accuracies = [num_examples * metrics["time"] for num_examples, metrics in fit_metrics]
+    metrics_aggregated = sum(weighted_accuracies) / num_total_fit_examples
+    return {"time": float(metrics_aggregated)}
