@@ -20,7 +20,7 @@ def pruned_weights(net):
         count_total += total
         count_zeros += zeros
         
-        print(f"For layer {i}, {round(zeros/total*100,4)}% pruning (over {total} parameters).")
+        # print(f"For layer {i}, {round(zeros/total*100,4)}% pruning (over {total} parameters).")
     
     print(f"Global pruning: {round(count_zeros/count_total*100,2)}%")
 
