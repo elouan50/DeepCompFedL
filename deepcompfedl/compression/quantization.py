@@ -20,6 +20,12 @@ def quantize_layers(net, nbits : int = 8):
             # print("MaxPool2d layer: no quantization")
             pass
         
+        # In order to quantize a sequential layer, we can go recursively downwards.
+        elif isinstance(module, nn.Sequential):
+            # print(f"Sequential layer: recursive quantization")
+            for basicblock in module.children():
+                quantize_layers(basicblock, nbits)
+            
         else:
             dev = module.weight.device
             weight = module.weight.data.cpu().numpy()
@@ -82,6 +88,27 @@ def quantize_layers(net, nbits : int = 8):
                 # Updating the original model
                 mat.data = new_weight
                 module.weight.data = torch.from_numpy(mat.toarray()).to(dev)
+            
+            elif isinstance(module, nn.GroupNorm):
+                # print(f"GroupNorm layer: {nbits} bits quantization")
+                
+                if shape[0] > 2**nbits:        
+                    # Using a compressed sparse representation for the matrix
+                    mat = csc_matrix(weight)
+                    min_ = np.min(mat.data)
+                    max_ = np.max(mat.data)
+                    
+                    # Initializing the K-Means with a regular interval
+                    space = np.linspace(min_, max_, 2**nbits)
+                    
+                    # Operating the K-Means
+                    kmeans = KMeans(n_clusters=len(space), init=space.reshape(-1,1), n_init=1)
+                    kmeans.fit(mat.data.reshape(-1,1))
+                    new_weight = kmeans.cluster_centers_[kmeans.labels_].reshape(shape)
+                    
+                    # Updating the original model
+                    mat.data = new_weight
+                    module.weight.data = torch.from_numpy(mat.toarray()).to(dev)
             
             else:
                 print(f"Unexpected layer: {type(module)}")
