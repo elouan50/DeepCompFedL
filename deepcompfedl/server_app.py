@@ -57,6 +57,8 @@ def server_fn(context: Context):
             fraction_evaluate=1.0,
             min_available_clients=2,
             initial_parameters=parameters,
+            evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn,
+            fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
         )
     else:
         print("Strategy not recognized")

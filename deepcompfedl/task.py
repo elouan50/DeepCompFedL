@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Normalize, ToTensor, RandomCrop, RandomHorizontalFlip
 from flwr_datasets import FederatedDataset
-from flwr_datasets.partitioner import IidPartitioner
+from flwr_datasets.partitioner import IidPartitioner, DirichletPartitioner
 
 
 dict_tranforms = {  
@@ -46,7 +46,11 @@ def load_data(partition_id: int, num_partitions: int, dataset: str):
     # Only initialize `FederatedDataset` once
     global fds
     if fds is None:
-        partitioner = IidPartitioner(num_partitions=num_partitions)
+        # partitioner = IidPartitioner(num_partitions=num_partitions)
+        partitioner = DirichletPartitioner(num_partitions=num_partitions,
+                                           partition_by="label",
+                                           alpha=100,
+                                           self_balancing=True)
         fds = FederatedDataset(
             dataset="uoft-cs/cifar10",
             partitioners={"train": partitioner},
