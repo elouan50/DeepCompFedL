@@ -1,10 +1,14 @@
 """DeepCompFedL: A Flower / PyTorch app."""
 
 from logging import WARNING
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Union
+
+import wandb
 
 from flwr.common import (
+    EvaluateRes,
     FitIns,
+    FitRes,
     MetricsAggregationFn,
     NDArrays,
     Parameters,
@@ -18,6 +22,7 @@ from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 
 from flwr.server.strategy import FedAvg
+from flwr.server.strategy.aggregate import aggregate, aggregate_inplace, weighted_loss_avg
 
 from deepcompfedl.compression.pruning import prune
 from deepcompfedl.compression.quantization import quantize_layers
@@ -30,7 +35,7 @@ than or equal to the values of `min_fit_clients` and `min_evaluate_clients`.
 """
 
 
-class MyStrategy(FedAvg):
+class DeepCompFedLStrategy(FedAvg):
     """Costumized Federated Averaging strategy.
     
     Parameters
@@ -65,6 +70,22 @@ class MyStrategy(FedAvg):
         Metrics aggregation function, optional.
     inplace : bool (default: True)
         Enable (True) or disable (False) in-place aggregation of model updates.
+    num_rounds : int (default: 3)
+        Number of server rounds.
+    dataset : str (default: "")
+        Dataset used for training and evaluation of the model.
+    model : str (default: "")
+        Model that will be trained and evaluated.
+    epochs : int (default: 1)
+        Number of local epochs per client at each round.
+    enable_pruning : bool (default: False)
+        Enable (True) or disable (False) pruning of model updates, optional. Defaults to False.
+    pruning_rate : float (default: 0.)
+        Pruning rate (only if pruning is enabled), optional.
+    enable_quantization : bool (default: False)
+        Enable (True) or disable (False) quantization of model updates, optional. Defaults to False.
+    bits_quantization : int (default: 32)
+        Number of bits to represent the quantized model, optional.
     """
 
     # pylint: disable=too-many-arguments,too-many-instance-attributes, line-too-long
@@ -89,10 +110,14 @@ class MyStrategy(FedAvg):
         fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
         evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
         inplace: bool = True,
+        num_rounds: int = 3,
+        dataset: str = "",
+        model: str = "",
+        epochs: int = 1,
         enable_pruning: bool = False,
-        pruning_rate: float = 0.25,
+        pruning_rate: float = 0.,
         enable_quantization: bool = False,
-        bits_quantization: int = 8,
+        bits_quantization: int = 32,
     ) -> None:
         super().__init__()
 
@@ -119,6 +144,22 @@ class MyStrategy(FedAvg):
         self.pruning_rate = pruning_rate
         self.enable_quantization = enable_quantization
         self.bits_quantization = bits_quantization
+        
+        wandb.init(
+            project="deepcompfedl",
+            id=f"grativol-pruning{pruning_rate}-epochs{epochs}-exp1",
+            config={
+                "aggregation-strategy": "DeepCompFedLStrategy",
+                "num-rounds": num_rounds,
+                "dataset": dataset,
+                "model": model,
+                "fraction-fit": fraction_fit,
+                "server-enable-pruning": enable_pruning,
+                "server-pruning-rate": pruning_rate,
+                "server-enable-quantization": enable_quantization,
+                "server-bits-quantization": bits_quantization,
+            },
+        )
 
     def configure_fit(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
@@ -152,3 +193,72 @@ class MyStrategy(FedAvg):
 
         # Return client/config pairs
         return [(client, fit_ins) for client in clients]
+
+    def aggregate_fit(
+        self,
+        server_round: int,
+        results: List[Tuple[ClientProxy, FitRes]],
+        failures: List[Union[Tuple[ClientProxy, FitRes], BaseException]],
+    ) -> Tuple[Optional[Parameters], Dict[str, Scalar]]:
+        """Aggregate fit results using weighted average."""
+        if not results:
+            return None, {}
+        # Do not aggregate if there are failures and failures are not accepted
+        if not self.accept_failures and failures:
+            return None, {}
+
+        if self.inplace:
+            # Does in-place weighted average of results
+            aggregated_ndarrays = aggregate_inplace(results)
+        else:
+            # Convert results
+            weights_results = [
+                (parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples)
+                for _, fit_res in results
+            ]
+            aggregated_ndarrays = aggregate(weights_results)
+
+        parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
+
+        # Aggregate custom metrics if aggregation fn was provided
+        metrics_aggregated = {}
+        if self.fit_metrics_aggregation_fn:
+            fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
+            metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
+            wandb.log(metrics_aggregated, step=server_round)
+        elif server_round == 1:  # Only log this warning once
+            log(WARNING, "No fit_metrics_aggregation_fn provided")
+
+        return parameters_aggregated, metrics_aggregated
+
+    def aggregate_evaluate(
+        self,
+        server_round: int,
+        results: List[Tuple[ClientProxy, EvaluateRes]],
+        failures: List[Union[Tuple[ClientProxy, EvaluateRes], BaseException]],
+    ) -> Tuple[Optional[float], Dict[str, Scalar]]:
+        """Aggregate evaluation losses using weighted average."""
+        if not results:
+            return None, {}
+        # Do not aggregate if there are failures and failures are not accepted
+        if not self.accept_failures and failures:
+            return None, {}
+
+        # Aggregate loss
+        loss_aggregated = weighted_loss_avg(
+            [
+                (evaluate_res.num_examples, evaluate_res.loss)
+                for _, evaluate_res in results
+            ]
+        )
+
+        # Aggregate custom metrics if aggregation fn was provided
+        metrics_aggregated = {}
+        if self.evaluate_metrics_aggregation_fn:
+            eval_metrics = [(res.num_examples, res.metrics) for _, res in results]
+            metrics_aggregated = self.evaluate_metrics_aggregation_fn(eval_metrics)
+            wandb.log(metrics_aggregated, step=server_round)
+        elif server_round == 1:  # Only log this warning once
+            log(WARNING, "No evaluate_metrics_aggregation_fn provided")
+
+        return loss_aggregated, metrics_aggregated
