@@ -58,18 +58,16 @@ class FlowerClient(NumPyClient):
             if self.partition_id == 0:
                 print(f"Effective sent pruning (for client {self.partition_id} in fit):")
                 pruned_weights(self.net)
-                print("")
         
         ### Apply Quantization
         if self.enable_quantization:
             quantize_layers(self.net, self.bits_quantization)
             if self.partition_id == 0:
-                print(f"Effective received quantization (for client {self.partition_id}):")
+                print(f"Effective sent quantization (for client {self.partition_id}):")
                 quantized_layers(self.net)
-                print("")
         end = time.perf_counter()
         
-        return get_weights(self.net), len(self.trainloader.dataset), {"train_loss": train_loss, "time": float((end - begin)*1000)}
+        return get_weights(self.net), len(self.trainloader.dataset), {"train_loss": train_loss, "training-time": float((end - begin)*1000)}
 
     def evaluate(self, parameters, config):
         set_weights(self.net, parameters)
@@ -81,7 +79,6 @@ class FlowerClient(NumPyClient):
             if self.partition_id == 0:
                 print(f"Effective received pruning (for client {self.partition_id} in client_fn):")
                 pruned_weights(self.net)
-                print("")
                 
         return loss, len(self.valloader.dataset), {"accuracy": accuracy}
 

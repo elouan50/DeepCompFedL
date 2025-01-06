@@ -130,6 +130,6 @@ def evaluate_metrics_aggregation_fn(eval_metrics):
 
 def fit_metrics_aggregation_fn(fit_metrics):
     num_total_fit_examples = sum(num_examples for (num_examples, _) in fit_metrics)
-    weighted_accuracies = [num_examples * metrics["time"] for num_examples, metrics in fit_metrics]
+    weighted_accuracies = [num_examples * metrics["training-time"] for num_examples, metrics in fit_metrics]
     metrics_aggregated = sum(weighted_accuracies) / num_total_fit_examples
-    return {"time": float(metrics_aggregated)}
+    return {"training-time": float(metrics_aggregated)}

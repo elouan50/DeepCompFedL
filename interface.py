@@ -4,7 +4,7 @@ from tkinter.font import Font
 
 import toml
 import subprocess
-
+import sys
 
 def save_parameters(parameters):
     # Save parameters as TOML
@@ -37,10 +37,12 @@ def start_model():
                "--run-config", "deepcompfedl/__pycache__/interface-override.toml"]
     subprocess.run(command)
     subprocess.run(["rm","deepcompfedl/__pycache__/interface-override.toml"])
+    root.quit()
+    sys.exit()
 
 def toggle_server_compression():
     """Enable or disable the server compresion entries based on the Combobox."""
-    if agg_strategy_var.get() == "MyStrategy":
+    if agg_strategy_var.get() == "DeepCompFedLStrategy":
         enable_server_pruning_checkbox.config(state="normal")
         enable_server_quantization_checkbox.config(state="normal")
     else:
@@ -102,7 +104,7 @@ server_rounds_entry.grid(row=0, column=2, sticky="W")
 # Aggregation strategy
 ttk.Label(server_frame, text="Aggregation strategy:").grid(row=1, column=0, sticky="W")
 agg_strategy_var = tk.StringVar(value="FedAvg")
-agg_strategy_menu = ttk.Combobox(server_frame, textvariable=agg_strategy_var, values=["FedAvg", "MyStrategy", "other (None)"], state="readonly", postcommand=toggle_server_compression)
+agg_strategy_menu = ttk.Combobox(server_frame, textvariable=agg_strategy_var, values=["FedAvg", "DeepCompFedLStrategy", "other (None)"], state="readonly", postcommand=toggle_server_compression)
 agg_strategy_menu.grid(row=1, column=2, sticky="W")
 
 
@@ -114,7 +116,7 @@ enable_server_pruning_checkbox.grid(row=2, column=0, sticky="W")
 
 ttk.Label(server_frame, text="effective rate: ", font=italic_font).grid(row=2, column=1, sticky="E")
 server_pruning_entry = ttk.Entry(server_frame, width=10)
-server_pruning_entry.insert(0, "0.25")
+server_pruning_entry.insert(0, "0.0")
 server_pruning_entry.config(state="disabled")
 server_pruning_entry.grid(row=2, column=2, sticky="W")
 
@@ -127,7 +129,7 @@ enable_server_quantization_checkbox.grid(row=3, column=0, sticky="W")
 
 ttk.Label(server_frame, text="nb of bits: ", font=italic_font).grid(row=3, column=1, sticky="E")
 server_quantization_entry = ttk.Entry(server_frame, width=10)
-server_quantization_entry.insert(0, "8")
+server_quantization_entry.insert(0, "32")
 server_quantization_entry.config(state="disabled")
 server_quantization_entry.grid(row=3, column=2, sticky="W")
 
@@ -152,7 +154,7 @@ enable_client_pruning_checkbox.grid(row=1, column=0, sticky="W")
 
 ttk.Label(client_frame, text="effective rate: ", font=italic_font).grid(row=1, column=1, sticky="E")
 client_pruning_entry = ttk.Entry(client_frame, width=10)
-client_pruning_entry.insert(0, "0.25")
+client_pruning_entry.insert(0, "0.0")
 client_pruning_entry.config(state="disabled")
 client_pruning_entry.grid(row=1, column=2, sticky="W")
 
@@ -164,7 +166,7 @@ enable_client_quantization_checkbox.grid(row=2, column=0, sticky="W")
 
 ttk.Label(client_frame, text="nb of bits: ", font=italic_font).grid(row=2, column=1, sticky="E")
 client_quantization_entry = ttk.Entry(client_frame, width=10)
-client_quantization_entry.insert(0, "8")
+client_quantization_entry.insert(0, "32")
 client_quantization_entry.config(state="disabled")
 client_quantization_entry.grid(row=2, column=2, sticky="W")
 
