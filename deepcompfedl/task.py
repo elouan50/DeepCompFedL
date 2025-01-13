@@ -6,41 +6,51 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torchvision.transforms import Compose, Normalize, ToTensor
+from torchvision.transforms import Compose, Normalize, ToTensor, RandomCrop, RandomHorizontalFlip
 from flwr_datasets import FederatedDataset
-from flwr_datasets.partitioner import IidPartitioner
+from flwr_datasets.partitioner import IidPartitioner, DirichletPartitioner
 
 
-class Net(nn.Module):
-    """Model (simple CNN adapted from 'PyTorch: A 60 Minute Blitz')"""
+dict_tranforms = {  
+    "cifar10"           : Compose([
+                                        RandomCrop(32, padding=4),
+                                        RandomHorizontalFlip(),
+                                        ToTensor(),
+                                        Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]),
+    "emnist"            : Compose([
+                                        ToTensor(),
+                                        Normalize((0.1307,), (0.3081,))]), 
+    "cifar100"          : Compose([
+                                        RandomCrop(32, padding=4),
+                                        RandomHorizontalFlip(),
+                                        ToTensor(),
+                                        Normalize((0.5071, 0.4865, 0.4409), (0.2673, 0.2564, 0.2762))]), }
 
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
-
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        return self.fc3(x)
+dict_tranforms_test = {
+    "cifar10"           : Compose([
+                                        ToTensor(),
+                                        Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]),
+    "emnist"            : Compose([
+                                        ToTensor(),
+                                        Normalize((0.1307,), (0.3081,))]),
+    "cifar100"          : Compose([
+                                        ToTensor(),
+                                        Normalize((0.5071, 0.4865, 0.4409), (0.2673, 0.2564, 0.2762))]), }
 
 
 fds = None  # Cache FederatedDataset
 
 
-def load_data(partition_id: int, num_partitions: int):
+def load_data(partition_id: int, num_partitions: int, dataset: str):
     """Load partition CIFAR10 data."""
     # Only initialize `FederatedDataset` once
     global fds
     if fds is None:
-        partitioner = IidPartitioner(num_partitions=num_partitions)
+        # partitioner = IidPartitioner(num_partitions=num_partitions)
+        partitioner = DirichletPartitioner(num_partitions=num_partitions,
+                                           partition_by="label",
+                                           alpha=100,
+                                           self_balancing=True)
         fds = FederatedDataset(
             dataset="uoft-cs/cifar10",
             partitioners={"train": partitioner},
@@ -111,3 +121,15 @@ def set_weights(net, parameters):
     params_dict = zip(net.state_dict().keys(), parameters)
     state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
     net.load_state_dict(state_dict, strict=True)
+
+def evaluate_metrics_aggregation_fn(eval_metrics):
+    num_total_evaluation_examples = sum(num_examples for (num_examples, _) in eval_metrics)
+    weighted_accuracies = [num_examples * metrics["accuracy"] for num_examples, metrics in eval_metrics]
+    metrics_aggregated = sum(weighted_accuracies) / num_total_evaluation_examples
+    return {"accuracy": float(metrics_aggregated)}
+
+def fit_metrics_aggregation_fn(fit_metrics):
+    num_total_fit_examples = sum(num_examples for (num_examples, _) in fit_metrics)
+    weighted_accuracies = [num_examples * metrics["training-time"] for num_examples, metrics in fit_metrics]
+    metrics_aggregated = sum(weighted_accuracies) / num_total_fit_examples
+    return {"training-time": float(metrics_aggregated)}

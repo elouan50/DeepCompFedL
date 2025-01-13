@@ -13,7 +13,8 @@ dependencies = [
     "torch==2.2.1",
     "torchvision==0.17.1",
     "scipy>=1.14.1",
-    "scikit-learn>=1.5.2"
+    "scikit-learn>=1.5.2",
+    "pympler>=1.1",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -28,13 +29,20 @@ clientapp = "deepcompfedl.client_app:app"
 
 [tool.flwr.app.config]
 server-rounds = 3
-server-fraction-fit = 0.5
-server-pruning-rate = 0.25       # not used
-server-bits-quantization = 4     # not used
-aggregation-strategy = "FedAvg"  # not used
+server-enable-pruning = false
+server-pruning-rate = 0.25
+server-enable-quantization = false
+server-bits-quantization = 32
+aggregation-strategy = "FedAvg"
 client-epochs = 1
+client-enable-pruning = false
 client-pruning-rate = 0.25
-client-bits-quantization = 4
+client-enable-quantization = false
+client-bits-quantization = 32
+model = "Net"
+dataset = "CIFAR-10"
+fraction-fit = 0.2
+number=1
 
 [tool.flwr.federations]
 default = "local-simulation"
