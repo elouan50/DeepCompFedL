@@ -86,6 +86,8 @@ class DeepCompFedLStrategy(FedAvg):
         Enable (True) or disable (False) quantization of model updates, optional. Defaults to False.
     bits_quantization : int (default: 32)
         Number of bits to represent the quantized model, optional.
+    number : int (default: 1)
+        ID of the pass we call the experiment
     """
 
     # pylint: disable=too-many-arguments,too-many-instance-attributes, line-too-long
@@ -118,6 +120,7 @@ class DeepCompFedLStrategy(FedAvg):
         pruning_rate: float = 0.,
         enable_quantization: bool = False,
         bits_quantization: int = 32,
+        number: int = 1,
     ) -> None:
         super().__init__()
 
@@ -147,7 +150,7 @@ class DeepCompFedLStrategy(FedAvg):
         
         wandb.init(
             project="deepcompfedl",
-            id=f"grativol-pruning{pruning_rate}-epochs{epochs}-exp1",
+            id=f"grativol-pruning{pruning_rate}-epochs{epochs}-exp{number}",
             config={
                 "aggregation-strategy": "DeepCompFedLStrategy",
                 "num-rounds": num_rounds,

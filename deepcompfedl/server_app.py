@@ -26,6 +26,7 @@ def server_fn(context: Context):
     pruning_rate = context.run_config["server-pruning-rate"]
     enable_quantization = context.run_config["server-enable-quantization"]
     bits_quantization = context.run_config["server-bits-quantization"]
+    number = context.run_config["number"]
 
     # Initialize model parameters
     if model_name == "Net":
@@ -56,6 +57,7 @@ def server_fn(context: Context):
             pruning_rate=pruning_rate,
             enable_quantization=enable_quantization,
             bits_quantization=bits_quantization,
+            number=number,
         )
     elif aggregation_strategy == "FedAvg":
         strategy = FedAvg(
