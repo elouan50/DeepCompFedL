@@ -12,7 +12,9 @@ from deepcompfedl.task import (
 )
 from deepcompfedl.models.net import Net
 from deepcompfedl.models.resnet12 import ResNet12
+from deepcompfedl.models.resnet18 import ResNet18
 
+from torchvision.models import resnet18
 
 def server_fn(context: Context):
     # Read from config
@@ -32,7 +34,9 @@ def server_fn(context: Context):
     if model_name == "Net":
         model = Net()
     elif model_name == "ResNet12":
-        model = ResNet12(16, (3,32,32), 10)
+        model = ResNet12(16, (3,32,32), 10) # Might have to use 64 as first parameter??
+    elif model_name == "ResNet18":
+        model = resnet18()
     else:
         model = None
         print("Model not recognized")
