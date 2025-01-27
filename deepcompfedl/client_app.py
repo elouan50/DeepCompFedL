@@ -24,6 +24,7 @@ from deepcompfedl.task import (
 )
 from deepcompfedl.models.net import Net
 from deepcompfedl.models.resnet12 import ResNet12
+from torchvision.models import resnet18
 
 # Define Flower Client and client_fn
 class FlowerClient(NumPyClient):
@@ -87,7 +88,8 @@ def client_fn(context: Context):
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
     dataset = context.run_config["dataset"]
-    trainloader, valloader = load_data(partition_id, num_partitions, dataset)
+    alpha = context.run_config["alpha"]
+    trainloader, valloader = load_data(partition_id, num_partitions, alpha, dataset)
     local_epochs = context.run_config["client-epochs"]
     enable_pruning = context.run_config["client-enable-pruning"]
     pruning_rate = context.run_config["client-pruning-rate"]
@@ -99,6 +101,8 @@ def client_fn(context: Context):
         net = Net()
     elif model_name == "ResNet12":
         net = ResNet12(16, (3,32,32), 10)
+    elif model_name == "ResNet18":
+        net = resnet18(num_classes=10)
     else:
         log(WARNING, "No existing model provided")
     
