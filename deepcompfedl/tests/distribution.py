@@ -6,10 +6,11 @@ import matplotlib.cm as cm
 dataset = "cifar10"
 num_classes = 10
 num_partitions = 10
+alpha = 0.1
 distr = np.zeros((num_partitions, num_classes))
 
 for partition_id in range(num_partitions):
-    trainloader, valloader = load_data(partition_id, num_partitions, dataset)
+    trainloader, valloader = load_data(partition_id, num_partitions, alpha, dataset)
     
     for batch in valloader:
         for label in batch["label"]:
