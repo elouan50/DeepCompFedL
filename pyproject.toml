@@ -42,12 +42,13 @@ client-bits-quantization = 32
 model = "Net"
 dataset = "CIFAR-10"
 fraction-fit = 0.2
+alpha=100
 number=1
 
 [tool.flwr.federations]
 default = "local-simulation"
 
 [tool.flwr.federations.local-simulation]
-options.num-supernodes = 10
+options.num-supernodes = 100
 options.backend.client-resources.num-cpus = 32
 options.backend.client-resources.num-gpus = 1

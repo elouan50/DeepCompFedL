@@ -31,6 +31,7 @@ def start_model():
         "model": model_var.get(),
         "dataset": dataset_var.get(),
         "fraction-fit": float(fraction_clients_entry.get()),
+        "alpha": float(alpha_entry.get())
     }
     save_parameters(parameters=parameters)
     command = ["flwr", "run",
@@ -197,6 +198,13 @@ ttk.Label(advanced_frame, text="Fraction of clients selected: ").grid(row=2, col
 fraction_clients_entry = ttk.Entry(advanced_frame, width=10)
 fraction_clients_entry.insert(0, "0.2")
 fraction_clients_entry.grid(row=2, column=1, sticky="W")
+
+
+# Distribution
+ttk.Label(advanced_frame, text="Alpha for LDA distribution: ").grid(row=3, column=0, sticky="W")
+alpha_entry = ttk.Entry(advanced_frame, width=10)
+alpha_entry.insert(0, "100")
+alpha_entry.grid(row=2, column=1, sticky="W")
 
 
 
