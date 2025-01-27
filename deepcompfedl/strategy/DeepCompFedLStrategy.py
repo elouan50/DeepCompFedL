@@ -148,21 +148,21 @@ class DeepCompFedLStrategy(FedAvg):
         self.enable_quantization = enable_quantization
         self.bits_quantization = bits_quantization
         
-        wandb.init(
-            project="deepcompfedl",
-            id=f"grativol-pruning{pruning_rate}-epochs{epochs}-exp{number}",
-            config={
-                "aggregation-strategy": "DeepCompFedLStrategy",
-                "num-rounds": num_rounds,
-                "dataset": dataset,
-                "model": model,
-                "fraction-fit": fraction_fit,
-                "server-enable-pruning": enable_pruning,
-                "server-pruning-rate": pruning_rate,
-                "server-enable-quantization": enable_quantization,
-                "server-bits-quantization": bits_quantization,
-            },
-        )
+        # wandb.init(
+        #     project="deepcompfedl",
+        #     id=f"grativol-pruning{pruning_rate}-epochs{epochs}-exp{number}",
+        #     config={
+        #         "aggregation-strategy": "DeepCompFedLStrategy",
+        #         "num-rounds": num_rounds,
+        #         "dataset": dataset,
+        #         "model": model,
+        #         "fraction-fit": fraction_fit,
+        #         "server-enable-pruning": enable_pruning,
+        #         "server-pruning-rate": pruning_rate,
+        #         "server-enable-quantization": enable_quantization,
+        #         "server-bits-quantization": bits_quantization,
+        #     },
+        # )
 
     def configure_fit(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
@@ -228,7 +228,7 @@ class DeepCompFedLStrategy(FedAvg):
         if self.fit_metrics_aggregation_fn:
             fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
-            wandb.log(metrics_aggregated, step=server_round)
+            # wandb.log(metrics_aggregated, step=server_round)
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No fit_metrics_aggregation_fn provided")
 
@@ -260,7 +260,7 @@ class DeepCompFedLStrategy(FedAvg):
         if self.evaluate_metrics_aggregation_fn:
             eval_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.evaluate_metrics_aggregation_fn(eval_metrics)
-            wandb.log(metrics_aggregated, step=server_round)
+            # wandb.log(metrics_aggregated, step=server_round)
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No evaluate_metrics_aggregation_fn provided")
 
