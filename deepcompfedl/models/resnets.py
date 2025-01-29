@@ -46,7 +46,7 @@ class ResNet(nn.Module):
 
         layers = []
         for i, nb in enumerate(num_blocks):
-            layers.append(self._make_layer(block, (2 ** i) * feature_maps, nb,stride = 1 if i == 0 else 2))
+            layers.append(self._make_layer(block, (2 ** i) * feature_maps, nb, stride = 1 if i == 0 else 2, batchn=batchn))
         self.layers = nn.Sequential(*layers)
         self.linear = nn.Linear((2 ** (len(num_blocks) - 1)) * feature_maps, num_classes)
         self.depth = len(num_blocks)
@@ -56,7 +56,7 @@ class ResNet(nn.Module):
         layers = []
         for i in range(len(strides)):
             stride = strides[i]
-            layers.append(block(self.in_planes, planes, stride,batchn))
+            layers.append(block(self.in_planes, planes, stride, batchn))
             if i < len(strides) - 1:
                 layers.append(nn.ReLU())
             self.in_planes = planes
