@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn as nn
 import math
 import time
 
@@ -9,19 +10,25 @@ from torchvision.models import resnet18
 
 from deepcompfedl.models.net import Net
 from deepcompfedl.models.resnet12 import ResNet12
+from deepcompfedl.models.resnet18 import ResNet18, ResNet, ResidualBlock
+# from deepcompfedl.models.resnets import ResNet18, ResNet, BasicBlock
 from deepcompfedl.task import train, load_data
 
 from deepcompfedl.compression.pruning import prune
 
 net = Net()
-resNet18 = resnet18()
+# resNet18 = resnet18()
+# resNet18 = ResNet18(64, (3,32,32), 10, True)
+resNet18 = ResNet18()
 resNet12 = ResNet12(16, (3,32,32), 10)
 
-compare = [[],[]]
+compare = [[],[],[]]
 
-### With parameters()
 
-begin1 = time.perf_counter()
+
+##### With parameters()
+
+begin = time.perf_counter()
 
 params = [param for param in resNet18.parameters()]
 
@@ -34,30 +41,48 @@ for param in params:
     i += temp
     compare[0].append(size)
 
-# params = prune(params)
+end = time.perf_counter()
 
-end1 = time.perf_counter()
+print(f"For ResNet18, {len(params)} layers ({i} params) in {int((end-begin)*1000000)}ms for parameters()")
 
-### With state_dict().items()
+##### With state_dict().items()
 
-begin2 = time.perf_counter()
+begin = time.perf_counter()
 
-palams = [val.cpu().numpy() for _, val in resNet18.state_dict().items()]
+params = [val.cpu().numpy() for _, val in resNet18.state_dict().items()]
 
 j = 0
-for palam in palams:
-    j += np.size(palam)
-    compare[1].append(np.shape(palam))
+for param in params:
+    j += np.size(param)
+    compare[1].append(np.shape(param))
 
-palams = prune(palams)
+params = prune(params)
 
-end2 = time.perf_counter()
+end = time.perf_counter()
 
-### Print the results
+# print(f"For ResNet18, {len(params)} layers ({j} params) in {int((end-begin)*1000000)}ms for state_dict().items()")
 
-print(f"For ResNet18, {len(params)} layers ({i} params) in {int((end1-begin1)*1000000)}ms or {len(palams)} layers ({j} params) in {int((end2-begin2)*1000000)}ms")
-print(len(compare[0]))
+
+##### With children()
+
+begin = time.perf_counter()
+
+def print_layers_resnet(resnet: ResNet, k=0):
+    for module in resnet.children():
+        if isinstance(module, (nn.Sequential, ResidualBlock)):
+            print(f"info:        {type(module)}")
+            k = print_layers_resnet(module, k)
+        else:
+            print(type(module))
+            k += 1
+    return k
+
+k = print_layers_resnet(resNet18)
+
+end = time.perf_counter()
+
+print(f"For recursive children exploration, {k} layers in {int((end-begin)*1000000)}ms.")
+
+##### Print the results
+
 print(compare[0][:]==compare[1][:])
-print(len(compare[1]))
-print(param[size[0]-1])
-print(palam[size[0]-1])

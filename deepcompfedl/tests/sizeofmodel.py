@@ -1,5 +1,6 @@
 from deepcompfedl.models.resnet12 import ResNet12
-from deepcompfedl.models.resnets import ResNet18
+from deepcompfedl.models.resnet18 import ResNet18
+# from deepcompfedl.models.resnets import ResNet18
 from deepcompfedl.models.qresnets import QResNet18
 from deepcompfedl.task import train, test, load_data
 import numpy as np
@@ -10,7 +11,8 @@ from torchvision.models import resnet18
 
 # model = ResNet12(16, (3,32,32), 10)
 # model = ResNet12(64, (3,32,32), 10)
-model = ResNet18(64, (3,32,32), 10)
+# model = ResNet18(64, (3,32,32), 10)
+model = ResNet18()
 # model = QResNet18(64, (3,32,32), 10)
 # model = resnet18(num_classes=10)
 
