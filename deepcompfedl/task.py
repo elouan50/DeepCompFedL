@@ -50,6 +50,7 @@ def load_data(partition_id: int, num_partitions: int, alpha: int | float, datase
         partitioner = DirichletPartitioner(num_partitions=num_partitions,
                                            partition_by="label",
                                            alpha=alpha,
+                                           min_partition_size=1,
                                            self_balancing=True)
         fds = FederatedDataset(
             dataset="uoft-cs/cifar10",
