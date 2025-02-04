@@ -6,7 +6,7 @@ do
     do
         echo "Experiment with pruning rate $prate"
         flwr run --run-config "
-                            server-rounds=100
+                            server-rounds=500
                             server-enable-pruning=true
                             server-pruning-rate=$prate
                             client-enable-pruning=true
@@ -14,8 +14,8 @@ do
                             model='ResNet18'
                             fraction-fit=0.1
                             aggregation-strategy='DeepCompFedLStrategy'
-                            client-epochs=$epochs
-                            alpha=0.1
+                            client-epochs=1
+                            alpha=1
                             number=$number
                             "
     done
