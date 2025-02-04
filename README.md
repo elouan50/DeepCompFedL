@@ -22,6 +22,9 @@ sudo apt install python3-tk
 
 <i>Note: use of such in-built interface is not recommanded, but I did it here for simplicity reasons. It would be better to build an API and a front-end application.</i>
 
+
+In the adapted strategy file `./deepcompfedl/strategy/DeepCompFedLStrategy.py`, in the `__init__()`, `aggregate_fit()` and `aggregate_evaluate()` methods you'll find `wandb` calls. It is very useful for reporting online the results of the experiments you in a very user-friendly interface. If you don't to use it, just comment the lines. If you do, you'll eventually need to connect your `wandb` account. I recommand to follow the documentation on the application own website.
+
 ## Run the project
 
 You have two possibilities to run the project: either via the native framework, or with an interface I implemented myself.
@@ -46,8 +49,14 @@ In the `DeepCompFedL` directory, execute the `interface.py` file:
 ```bash
 python3 interface.py
 ```
-Beware, for the moment all parameters are not truly used during the execution.
-TODO: implement use of the parameters, and also eventually add some others.
+
+### Run the framework with the prepared experiments
+
+To reproduce the experiments described in my paper, execute this command:
+```bash
+sh file_name.sh
+```
+
 
 ## Troubleshooting
 
@@ -70,6 +79,8 @@ nvidia-smi
 ```
 
 If `cuda` is available, then it should be ok. Else, either set the number of available GPUs to 0 or try to google your problem :\)
+
+Beware also with `wandb` use, you can't run two experiments with the same id within the same project, or else the execution will loop on the connection to the server. Check for `wandb.init()` in the `./deepcompfedl/strategy/DeepCompFedLStrategy.py` file.
 
 ## Acknowledgments
 
