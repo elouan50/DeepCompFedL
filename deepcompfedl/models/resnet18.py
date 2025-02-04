@@ -1,4 +1,9 @@
-import torch
+"""
+This implementation of the ResNet18 comes directly from
+https://github.com/samcw/ResNet18-Pytorch
+"""
+
+
 from torch import nn
 from torch.nn import functional as F
 

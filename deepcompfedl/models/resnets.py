@@ -1,3 +1,11 @@
+"""
+This file is a uncchanged copy of
+https://github.com/lgrativol/fl_exps/blob/main/models/resnets.py
+
+It is a different implementation of the ResNet18 neural network
+than the one in the file ./deepcompfedfl/models/resnet18.py
+even though both can be used the same way.
+"""
 
 import torch.nn as nn
 import torch.nn.functional as F

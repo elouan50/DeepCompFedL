@@ -158,7 +158,7 @@ class DeepCompFedLStrategy(FedAvg):
         
         wandb.init(
             project="deepcompfedl-exp1-resnet18-alpha1-rounds500",
-            id=f"pruning{pruning_rate}-epochs{epochs}-exp{number}",
+            id=f"prune{pruning_rate}-epochs{epochs}-exp{number}",
             config={
                 "aggregation-strategy": "DeepCompFedLStrategy",
                 "num-rounds": num_rounds,
