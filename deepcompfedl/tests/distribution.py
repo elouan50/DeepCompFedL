@@ -5,7 +5,7 @@ import matplotlib.cm as cm
 
 dataset = "cifar10"
 num_classes = 10
-num_partitions = 10
+num_partitions = 100
 alpha = 0.1
 distr = np.zeros((num_partitions, num_classes))
 
@@ -37,7 +37,7 @@ def plot_colored_bars(matrix):
     normalized_matrix = matrix / row_sums  # Make each row proportional
 
     # Create a figure
-    fig, ax = plt.subplots(figsize=(10, 3))  # Adjust the figure size based on m
+    fig, ax = plt.subplots(figsize=(10, 20))  # Adjust the figure size based on m
 
     # Generate colors for each column
     colors = cm.RdYlGn(np.linspace(0, 1, n))  # Use a colormap to get n distinct colors
@@ -52,7 +52,7 @@ def plot_colored_bars(matrix):
 
     # Configure the axes
     ax.set_yticks(np.arange(m))
-    ax.set_yticklabels([f"Client {i}" for i in range(m)])
+    ax.set_yticklabels([f"Client {i}: {int(np.sum(matrix[i,:]))} samples" for i in range(m)])
     ax.set_xlim(0, 1)  # Ensure the total width of each row is 1 (normalized)
     ax.set_xlabel("Class distribution")
     ax.set_xticks([])

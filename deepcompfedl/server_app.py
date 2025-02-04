@@ -31,6 +31,7 @@ def server_fn(context: Context):
     enable_quantization = context.run_config["server-enable-quantization"]
     bits_quantization = context.run_config["server-bits-quantization"]
     number = context.run_config["number"]
+    alpha = context.run_config["alpha"]
 
     # Initialize model parameters
     if model_name == "Net":
@@ -58,6 +59,7 @@ def server_fn(context: Context):
             fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
             num_rounds=num_rounds,
             dataset=dataset,
+            alpha=alpha,
             model=model_name,
             epochs=client_epochs,
             enable_pruning=enable_pruning,

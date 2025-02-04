@@ -118,6 +118,7 @@ class DeepCompFedLStrategy(FedAvg):
         inplace: bool = True,
         num_rounds: int = 3,
         dataset: str = "",
+        alpha: int | bool = 100,
         model: str = "",
         epochs: int = 1,
         enable_pruning: bool = False,
@@ -156,12 +157,13 @@ class DeepCompFedLStrategy(FedAvg):
         self.bits_quantization = bits_quantization
         
         wandb.init(
-            project="deepcompfedl-exp1bis",
-            id=f"grativol-1bis-pruning{pruning_rate}-exp{number}",
+            project="deepcompfedl-exp1-resnet18-alpha1-rounds500",
+            id=f"pruning{pruning_rate}-epochs{epochs}-exp{number}",
             config={
                 "aggregation-strategy": "DeepCompFedLStrategy",
                 "num-rounds": num_rounds,
                 "dataset": dataset,
+                "alpha": alpha,
                 "model": model,
                 "fraction-fit": fraction_fit,
                 "server-enable-pruning": enable_pruning,
