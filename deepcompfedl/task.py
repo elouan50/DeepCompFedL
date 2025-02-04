@@ -41,7 +41,7 @@ dict_tranforms_test = {
 fds = None  # Cache FederatedDataset
 
 
-def load_data(partition_id: int, num_partitions: int, dataset: str):
+def load_data(partition_id: int, num_partitions: int, alpha: int | float, dataset: str):
     """Load partition CIFAR10 data."""
     # Only initialize `FederatedDataset` once
     global fds
@@ -49,7 +49,8 @@ def load_data(partition_id: int, num_partitions: int, dataset: str):
         # partitioner = IidPartitioner(num_partitions=num_partitions)
         partitioner = DirichletPartitioner(num_partitions=num_partitions,
                                            partition_by="label",
-                                           alpha=100,
+                                           alpha=alpha,
+                                           min_partition_size=1,
                                            self_balancing=True)
         fds = FederatedDataset(
             dataset="uoft-cs/cifar10",

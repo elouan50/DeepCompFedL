@@ -12,7 +12,11 @@ from deepcompfedl.task import (
 )
 from deepcompfedl.models.net import Net
 from deepcompfedl.models.resnet12 import ResNet12
+from deepcompfedl.models.resnet18 import ResNet18
+# from deepcompfedl.models.resnets import ResNet18
 
+
+from torchvision.models import resnet18
 
 def server_fn(context: Context):
     # Read from config
@@ -27,12 +31,16 @@ def server_fn(context: Context):
     enable_quantization = context.run_config["server-enable-quantization"]
     bits_quantization = context.run_config["server-bits-quantization"]
     number = context.run_config["number"]
+    alpha = context.run_config["alpha"]
 
     # Initialize model parameters
     if model_name == "Net":
         model = Net()
     elif model_name == "ResNet12":
-        model = ResNet12(16, (3,32,32), 10)
+        model = ResNet12(16, (3,32,32), 10) # Might have to use 64 as first parameter??
+    elif model_name == "ResNet18":
+        model = ResNet18()
+        # model = resnet18(num_classes=10)
     else:
         model = None
         print("Model not recognized")
@@ -51,6 +59,7 @@ def server_fn(context: Context):
             fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
             num_rounds=num_rounds,
             dataset=dataset,
+            alpha=alpha,
             model=model_name,
             epochs=client_epochs,
             enable_pruning=enable_pruning,

@@ -1,5 +1,4 @@
 #!/bin/bash
-# We're going to execute a few experiments one after another
 
 # We want to make a variation on the pruning rate and the number of clients epochs
 

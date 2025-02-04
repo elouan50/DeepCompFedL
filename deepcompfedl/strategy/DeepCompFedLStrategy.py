@@ -4,6 +4,8 @@ from logging import WARNING
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import wandb
+import torch
+import os
 
 from flwr.common import (
     EvaluateRes,
@@ -26,6 +28,8 @@ from flwr.server.strategy.aggregate import aggregate, aggregate_inplace, weighte
 
 from deepcompfedl.compression.pruning import prune
 from deepcompfedl.compression.quantization import quantize_layers
+from deepcompfedl.task import set_weights
+from deepcompfedl.models.resnet18 import ResNet18
 
 WARNING_MIN_AVAILABLE_CLIENTS_TOO_LOW = """
 Setting `min_available_clients` lower than `min_fit_clients` or
@@ -114,6 +118,7 @@ class DeepCompFedLStrategy(FedAvg):
         inplace: bool = True,
         num_rounds: int = 3,
         dataset: str = "",
+        alpha: int | bool = 100,
         model: str = "",
         epochs: int = 1,
         enable_pruning: bool = False,
@@ -143,18 +148,22 @@ class DeepCompFedLStrategy(FedAvg):
         self.fit_metrics_aggregation_fn = fit_metrics_aggregation_fn
         self.evaluate_metrics_aggregation_fn = evaluate_metrics_aggregation_fn
         self.inplace = inplace
+        self.model = model
+        self.num_rounds = num_rounds
+        self.number = number
         self.enable_pruning = enable_pruning
         self.pruning_rate = pruning_rate
         self.enable_quantization = enable_quantization
         self.bits_quantization = bits_quantization
         
         wandb.init(
-            project="deepcompfedl",
-            id=f"grativol-pruning{pruning_rate}-epochs{epochs}-exp{number}",
+            project="deepcompfedl-exp1-resnet18-alpha1-rounds500",
+            id=f"prune{pruning_rate}-epochs{epochs}-exp{number}",
             config={
                 "aggregation-strategy": "DeepCompFedLStrategy",
                 "num-rounds": num_rounds,
                 "dataset": dataset,
+                "alpha": alpha,
                 "model": model,
                 "fraction-fit": fraction_fit,
                 "server-enable-pruning": enable_pruning,
@@ -222,6 +231,18 @@ class DeepCompFedLStrategy(FedAvg):
             aggregated_ndarrays = aggregate(weights_results)
 
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
+
+        if server_round == self.num_rounds:
+            save_dir = "deepcompfedl/saves/exp1bis"
+
+            os.makedirs(save_dir, exist_ok=True)
+            
+            if self.model == "ResNet18":
+                model = ResNet18()
+                set_weights(model, aggregated_ndarrays)
+                torch.save(model, f"deepcompfedl/saves/exp1bis/pruning{self.pruning_rate}-exp{self.number}.ptmodel")
+            else:
+                log(WARNING, "Model couldn't be saved")
 
         # Aggregate custom metrics if aggregation fn was provided
         metrics_aggregated = {}
