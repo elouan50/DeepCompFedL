@@ -157,7 +157,7 @@ class DeepCompFedLStrategy(FedAvg):
         self.bits_quantization = bits_quantization
         
         wandb.init(
-            project="deepcompfedl-exp1-resnet18-alpha1-rounds500",
+            project="deepcompfedl-exp1-resnet18-alpha1-rounds1000",
             id=f"prune{pruning_rate}-epochs{epochs}-exp{number}",
             config={
                 "aggregation-strategy": "DeepCompFedLStrategy",

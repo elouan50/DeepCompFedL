@@ -6,7 +6,7 @@ do
     do
         echo "Experiment with pruning rate $prate"
         flwr run --run-config "
-                            server-rounds=500
+                            server-rounds=1000
                             server-enable-pruning=true
                             server-pruning-rate=$prate
                             client-enable-pruning=true
