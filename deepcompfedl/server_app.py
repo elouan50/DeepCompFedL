@@ -22,6 +22,7 @@ def server_fn(context: Context):
     # Read from config
     num_rounds = context.run_config["server-rounds"]
     dataset = context.run_config["dataset"]
+    computer = context.run_config["computer"]
     client_epochs = context.run_config["client-epochs"]
     fraction_fit = context.run_config["fraction-fit"]
     aggregation_strategy = context.run_config["aggregation-strategy"]
@@ -57,6 +58,7 @@ def server_fn(context: Context):
             initial_parameters=parameters,
             evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn,
             fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
+            computer=computer,
             num_rounds=num_rounds,
             dataset=dataset,
             alpha=alpha,
