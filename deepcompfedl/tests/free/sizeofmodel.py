@@ -1,3 +1,11 @@
+"""
+This file aims to estimate the size of a model, by exploring
+its attributes. This is not how I'll do it later on.
+
+Actual method used for measuring size the model is described
+in the `saveandzip.py` file.
+"""
+
 from deepcompfedl.models.resnet12 import ResNet12
 from deepcompfedl.models.resnet18 import ResNet18
 # from deepcompfedl.models.resnets import ResNet18

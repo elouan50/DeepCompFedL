@@ -1,8 +1,13 @@
+"""
+This file aims to show how the measurement of the size
+of the model in done in the project.
+"""
+
 import torch
 import os
 
-# from deepcompfedl.models.resnet18 import ResNet18
-from deepcompfedl.models.resnets import ResNet18
+# from deepcompfedl.models.resnets import ResNet18
+from deepcompfedl.models.resnet18 import ResNet18
 from deepcompfedl.task import (
     train,
     test,
@@ -20,7 +25,8 @@ os.makedirs(save_dir, exist_ok=True)
 
 def saveforprunerate(pr):
     # Initialize the model
-    model = ResNet18(64, (3,32,32), 10)
+    # model = ResNet18(64, (3,32,32), 10)
+    model = ResNet18()
 
     # Train it on the first partition, print the accuracy
     trainloader, testloader = load_data(0, 10, 100, "CIFAR10")
@@ -34,7 +40,7 @@ def saveforprunerate(pr):
     set_weights(model, params)
     pruned_weights(model)
 
-    # Review accuarcy after pruning
+    # Review accuracy after pruning
     print(f"Metrics after training: {test(model, testloader, 'cuda')}")
     
     torch.save(model, f"{save_dir}/pruned{pr}.ptmodel")
