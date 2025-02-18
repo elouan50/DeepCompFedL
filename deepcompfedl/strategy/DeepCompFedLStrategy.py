@@ -27,7 +27,7 @@ from flwr.server.strategy import FedAvg
 from flwr.server.strategy.aggregate import aggregate, aggregate_inplace, weighted_loss_avg
 
 from deepcompfedl.compression.pruning import prune
-from deepcompfedl.compression.quantization import quantize_layers
+from deepcompfedl.compression.quantization import quantize
 from deepcompfedl.task import set_weights
 from deepcompfedl.models.resnet18 import ResNet18
 
@@ -157,23 +157,23 @@ class DeepCompFedLStrategy(FedAvg):
         self.enable_quantization = enable_quantization
         self.bits_quantization = bits_quantization
         
-        wandb.init(
-            project="deepcompfedl-exp2",
-            id=f"quant{bits_quantization}-exp{number}",
-            config={
-                "computer": computer,
-                "aggregation-strategy": "DeepCompFedLStrategy",
-                "num-rounds": num_rounds,
-                "dataset": dataset,
-                "alpha": alpha,
-                "model": model,
-                "fraction-fit": fraction_fit,
-                "server-enable-pruning": enable_pruning,
-                "server-pruning-rate": pruning_rate,
-                "server-enable-quantization": enable_quantization,
-                "server-bits-quantization": bits_quantization,
-            },
-        )
+        # wandb.init(
+        #     project="deepcompfedl-exp2",
+        #     id=f"quant{bits_quantization}-exp{number}",
+        #     config={
+        #         "computer": computer,
+        #         "aggregation-strategy": "DeepCompFedLStrategy",
+        #         "num-rounds": num_rounds,
+        #         "dataset": dataset,
+        #         "alpha": alpha,
+        #         "model": model,
+        #         "fraction-fit": fraction_fit,
+        #         "server-enable-pruning": enable_pruning,
+        #         "server-pruning-rate": pruning_rate,
+        #         "server-enable-quantization": enable_quantization,
+        #         "server-bits-quantization": bits_quantization,
+        #     },
+        # )
 
     def configure_fit(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
@@ -192,7 +192,7 @@ class DeepCompFedLStrategy(FedAvg):
         
         if self.enable_quantization:
             ndarrays = parameters_to_ndarrays(parameters)
-            ndarrays = quantize_layers(ndarrays, self.bits_quantization)
+            ndarrays = quantize(ndarrays, self.bits_quantization)
             parameters = ndarrays_to_parameters(ndarrays)
         
         fit_ins = FitIns(parameters, config)
@@ -251,7 +251,7 @@ class DeepCompFedLStrategy(FedAvg):
         if self.fit_metrics_aggregation_fn:
             fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
-            wandb.log(metrics_aggregated, step=server_round)
+            # wandb.log(metrics_aggregated, step=server_round)
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No fit_metrics_aggregation_fn provided")
 
@@ -283,7 +283,7 @@ class DeepCompFedLStrategy(FedAvg):
         if self.evaluate_metrics_aggregation_fn:
             eval_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.evaluate_metrics_aggregation_fn(eval_metrics)
-            wandb.log(metrics_aggregated, step=server_round)
+            # wandb.log(metrics_aggregated, step=server_round)
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No evaluate_metrics_aggregation_fn provided")
 
