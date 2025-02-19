@@ -14,7 +14,7 @@ from deepcompfedl.models.resnet18 import ResNet18, ResNet, ResidualBlock
 
 
 # net = Net()
-# net = ResNet12(16, (3,32,32), 10)
+# net = ResNet12()
 net = ResNet18()
 
 
