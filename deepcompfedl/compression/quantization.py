@@ -8,30 +8,35 @@ import torch.nn as nn
 from sklearn.cluster import KMeans
 from scipy.sparse import csc_matrix, csr_matrix
 
-from flwr.common import NDArrays
+from flwr.common import NDArrays, Parameters
 
 def quantize(params: NDArrays, nbits: int = 8, layer_scale: bool = True):
+    output = []
     for layer in params:
-        shape = np.size(layer)
+        # Flatten the matrix
+        shape = np.shape(layer)            
         flattened = layer.reshape(-1,1)
         
         # Using a compressed sparse representation for the matrix
         mat = csr_matrix(flattened)
-        min_ = np.min(mat.data)
-        max_ = np.max(mat.data)
+        if mat.getnnz() > 2**nbits:
+            min_ = np.min(mat.data)
+            max_ = np.max(mat.data)
             
-        # Initializing the K-Means with a regular interval
-        space = np.linspace(min_, max_, num=2**nbits)
+            if min_ != max_:    
+                # Initializing the K-Means with a regular interval
+                space = np.linspace(min_, max_, num=2**nbits)
+                    
+                # Operating the K-Means
+                kmeans = KMeans(n_clusters=len(space), init=space.reshape(-1,1), n_init=1)
+                kmeans.fit(mat.data.reshape(-1,1))
+                new_weight = kmeans.cluster_centers_[kmeans.labels_].reshape(-1)
+                mat.data = new_weight
+                flattened = mat.toarray()
             
-        # Operating the K-Means
-        kmeans = KMeans(n_clusters=len(space), init=space.reshape(-1,1), n_init=1)
-        kmeans.fit(mat.data.reshape(-1,1))
-        new_weight = kmeans.cluster_centers_[kmeans.labels_].reshape(-1)
-        mat.data = new_weight
-        new_flattened = mat.toarray()
+        output.append(flattened.reshape(shape))
         
-        layer = new_flattened.reshape(shape)
-    return params
+    return output
 
 def quantize_layers(net, nbits: int = 8):
     """
