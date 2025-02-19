@@ -30,6 +30,7 @@ from deepcompfedl.compression.pruning import prune
 from deepcompfedl.compression.quantization import quantize
 from deepcompfedl.task import set_weights
 from deepcompfedl.models.resnet18 import ResNet18
+from deepcompfedl.models.resnet12 import ResNet12
 
 WARNING_MIN_AVAILABLE_CLIENTS_TOO_LOW = """
 Setting `min_available_clients` lower than `min_fit_clients` or
@@ -157,23 +158,23 @@ class DeepCompFedLStrategy(FedAvg):
         self.enable_quantization = enable_quantization
         self.bits_quantization = bits_quantization
         
-        # wandb.init(
-        #     project="deepcompfedl-exp2",
-        #     id=f"quant{bits_quantization}-exp{number}",
-        #     config={
-        #         "computer": computer,
-        #         "aggregation-strategy": "DeepCompFedLStrategy",
-        #         "num-rounds": num_rounds,
-        #         "dataset": dataset,
-        #         "alpha": alpha,
-        #         "model": model,
-        #         "fraction-fit": fraction_fit,
-        #         "server-enable-pruning": enable_pruning,
-        #         "server-pruning-rate": pruning_rate,
-        #         "server-enable-quantization": enable_quantization,
-        #         "server-bits-quantization": bits_quantization,
-        #     },
-        # )
+        wandb.init(
+            project="deepcompfedl-exp2",
+            id=f"t-quant{bits_quantization}-exp{number}-epochs{epochs}",
+            config={
+                "computer": computer,
+                "aggregation-strategy": "DeepCompFedLStrategy",
+                "num-rounds": num_rounds,
+                "dataset": dataset,
+                "alpha": alpha,
+                "model": model,
+                "fraction-fit": fraction_fit,
+                "server-enable-pruning": enable_pruning,
+                "server-pruning-rate": pruning_rate,
+                "server-enable-quantization": enable_quantization,
+                "server-bits-quantization": bits_quantization,
+            },
+        )
 
     def configure_fit(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
@@ -235,7 +236,7 @@ class DeepCompFedLStrategy(FedAvg):
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
         if server_round == self.num_rounds:
-            save_dir = "deepcompfedl/saves/exp1bis"
+            save_dir = "deepcompfedl/saves/exp2"
 
             os.makedirs(save_dir, exist_ok=True)
             
@@ -243,6 +244,10 @@ class DeepCompFedLStrategy(FedAvg):
                 model = ResNet18()
                 set_weights(model, aggregated_ndarrays)
                 torch.save(model, f"deepcompfedl/saves/exp1bis/pruning{self.pruning_rate}-exp{self.number}.ptmodel")
+            elif self.model == "ResNet12":
+                model = ResNet12(16, (3,32,32), 10)
+                set_weights(model, aggregated_ndarrays)
+                torch.save(model, f"deepcompfedl/saves/exp2/quant{self.bits_quantization}-exp{self.number}.ptmodel")
             else:
                 log(WARNING, "Model couldn't be saved")
 
@@ -251,7 +256,7 @@ class DeepCompFedLStrategy(FedAvg):
         if self.fit_metrics_aggregation_fn:
             fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
-            # wandb.log(metrics_aggregated, step=server_round)
+            wandb.log(metrics_aggregated, step=server_round)
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No fit_metrics_aggregation_fn provided")
 
@@ -283,7 +288,7 @@ class DeepCompFedLStrategy(FedAvg):
         if self.evaluate_metrics_aggregation_fn:
             eval_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.evaluate_metrics_aggregation_fn(eval_metrics)
-            # wandb.log(metrics_aggregated, step=server_round)
+            wandb.log(metrics_aggregated, step=server_round)
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No evaluate_metrics_aggregation_fn provided")
 

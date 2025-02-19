@@ -50,7 +50,7 @@ def quantized_layers(net):
         elif isinstance(module, nn.GroupNorm):
             pass
         else:
-            print(f"{type(module)} is being examined")
+            # print(f"{type(module)} is being examined")
             weight = module.weight.data.cpu().numpy()
             size = np.size(weight)
             layer = np.reshape(weight, (size,1))
@@ -61,6 +61,16 @@ def quantized_layers(net):
 
             print(f"    Layer {module.__class__.__name__}: there are {len(list_weights)-1} different weights different than 0.")
             # print(f"These weights are: {list_weights}")
+
+def quantized(params):
+    for layer in params:
+        weights = layer.reshape(-1)
+        list_weights = [0.]
+        for w in weights:
+            if not(w in list_weights):
+                list_weights.append(w)
+        print(f"{len(list_weights)-1} different non-null weights values on this layer")
+
 
 def size_var(net):
     size = asizeof.asizeof(net)

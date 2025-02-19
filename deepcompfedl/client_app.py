@@ -8,9 +8,10 @@ from flwr.common import Context
 from flwr.common.logger import log
 
 from deepcompfedl.compression.pruning import prune
-from deepcompfedl.compression.quantization import quantize_layers, quantize_model
+from deepcompfedl.compression.quantization import quantize, quantize_layers, quantize_model
 from deepcompfedl.compression.metrics import (
     pruned_weights,
+    quantized,
     quantized_model,
     quantized_layers,
 )
@@ -63,10 +64,12 @@ class FlowerClient(NumPyClient):
         
         ### Apply Quantization
         if self.enable_quantization:
-            quantize_layers(self.net, self.bits_quantization)
-            if self.partition_id == 0:
-                print(f"Effective sent quantization (for client {self.partition_id}):")
-                quantized_layers(self.net)
+            params = get_weights(self.net)
+            quantize(params, self.bits_quantization)
+            set_weights(self.net, params)
+            # if self.partition_id == 0:
+            #     print(f"Effective sent quantization (for client {self.partition_id}):")
+            #     quantized(self.net)
         end = time.perf_counter()
         
         return get_weights(self.net), len(self.trainloader.dataset), {"train_loss": train_loss, "training-time": float((end - begin)*1000)}
