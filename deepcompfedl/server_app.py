@@ -38,7 +38,7 @@ def server_fn(context: Context):
     if model_name == "Net":
         model = Net()
     elif model_name == "ResNet12":
-        model = ResNet12(16, (3,32,32), 10) # Might have to use 64 as first parameter??
+        model = ResNet12() # Might have to use 64 as first parameter??
     elif model_name == "ResNet18":
         model = ResNet18()
         # model = resnet18(num_classes=10)

@@ -104,7 +104,7 @@ def client_fn(context: Context):
     if model_name == "Net":
         net = Net()
     elif model_name == "ResNet12":
-        net = ResNet12(16, (3,32,32), 10)
+        net = ResNet12()
     elif model_name == "ResNet18":
         net = ResNet18()
         # net = resnet18(num_classes=10)

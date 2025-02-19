@@ -24,7 +24,7 @@ class BasicBlockRN12(nn.Module):
         return out
     
 class ResNet12(nn.Module):
-    def __init__(self, feature_maps, input_shape, num_classes):
+    def __init__(self, feature_maps: int = 16, input_shape: tuple = (3,32,32), num_classes: int = 10):
         super(ResNet12, self).__init__()        
         layers = []
         layers.append(BasicBlockRN12(input_shape[0], feature_maps))

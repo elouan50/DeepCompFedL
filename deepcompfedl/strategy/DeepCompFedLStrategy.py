@@ -245,7 +245,7 @@ class DeepCompFedLStrategy(FedAvg):
                 set_weights(model, aggregated_ndarrays)
                 torch.save(model, f"deepcompfedl/saves/exp1bis/pruning{self.pruning_rate}-exp{self.number}.ptmodel")
             elif self.model == "ResNet12":
-                model = ResNet12(16, (3,32,32), 10)
+                model = ResNet12()
                 set_weights(model, aggregated_ndarrays)
                 torch.save(model, f"deepcompfedl/saves/exp2/quant{self.bits_quantization}-exp{self.number}.ptmodel")
             else:
