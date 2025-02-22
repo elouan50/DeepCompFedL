@@ -23,11 +23,17 @@ sudo apt install python3-tk
 <i>Note: use of such in-built interface is not recommanded, but I did it here for simplicity reasons. It would be better to build an API and a front-end application.</i>
 
 
-In the adapted strategy file `./deepcompfedl/strategy/DeepCompFedLStrategy.py`, in the `__init__()`, `aggregate_fit()` and `aggregate_evaluate()` methods you'll find `wandb` calls. It is very useful for reporting online the results of the experiments you in a very user-friendly interface. If you don't to use it, just comment the lines. If you do, you'll eventually need to connect your `wandb` account. I recommand to follow the documentation on the application own website.
+In the adapted strategy file `./deepcompfedl/strategy/DeepCompFedLStrategy.py`, in the `__init__()`, `aggregate_fit()` and `aggregate_evaluate()` methods you'll find `wandb` calls. It is very useful for reporting purposes: in a very friendly user-interface, you can monitor metrics of the experiments running in real-time. If you don't want to use it, just comment the relative lines. The first time you use `wandb`, you'll need to connect your account to your machine. I recommand to follow the documentation on the application own website.
 
 ## Run the project
 
-You have two possibilities to run the project: either via the native framework, or with an interface I implemented myself.
+To run the experiments described in my paper, execute this command (with `file_name.sh` being the file correspondign to the desired experiment):
+
+```bash
+sh file_name.sh
+```
+
+Elsewise, if you prefer to run your own experiment in a personalized setup, this project offers you two possibilities: either prepare your environment via the native framework, or with an interface I implemented myself.
 
 ### Run the native framework with the Simulation Engine
 
@@ -50,13 +56,6 @@ In the `DeepCompFedL` directory, execute the `interface.py` file:
 python3 interface.py
 ```
 
-### Run the framework with the prepared experiments
-
-To reproduce the experiments described in my paper, execute this command:
-```bash
-sh file_name.sh
-```
-
 
 ## Troubleshooting
 
@@ -67,7 +66,7 @@ pip install --upgrade pillow
 which should solve this issue.
 
 Please also pay attention to the number of available CPUs and GPUs, defined at the end of the `pyproject.toml` file.
-- If you works on Linux/Mac, to know the number of CPUs you can use, simply type `nproc` in a terminal.
+- If your machine is a Linux/Mac, to know the number of CPUs you can use, simply type `nproc` in a terminal.
 - To know if you can use the GPU, run a python environment and try these lines:
 ```python
 import torch
@@ -78,7 +77,7 @@ or for more informations:
 nvidia-smi
 ```
 
-If `cuda` is available, then it should be ok. Else, either set the number of available GPUs to 0 or try to google your problem :\)
+If `cuda` is available, then it should be ok. Else, to avoid errors you have to set the number of available GPUs to 0 in the `pyproject.toml` configuration file.
 
 Beware also with `wandb` use, you can't run two experiments with the same id within the same project, or else the execution will loop on the connection to the server. Check for `wandb.init()` in the `./deepcompfedl/strategy/DeepCompFedLStrategy.py` file.
 
