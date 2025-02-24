@@ -41,7 +41,6 @@ client-enable-pruning = false
 client-pruning-rate = 0.25
 client-enable-quantization = false
 client-bits-quantization = 32
-computer = "hiwi5"
 model = "Net"
 dataset = "CIFAR-10"
 fraction-fit = 0.2

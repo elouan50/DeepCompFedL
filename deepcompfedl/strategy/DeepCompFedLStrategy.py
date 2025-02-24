@@ -150,6 +150,7 @@ class DeepCompFedLStrategy(FedAvg):
         self.evaluate_metrics_aggregation_fn = evaluate_metrics_aggregation_fn
         self.inplace = inplace
         self.model = model
+        self.epochs = epochs
         self.num_rounds = num_rounds
         self.number = number
         self.enable_pruning = enable_pruning
@@ -241,11 +242,11 @@ class DeepCompFedLStrategy(FedAvg):
             if self.model == "ResNet18":
                 model = ResNet18()
                 set_weights(model, aggregated_ndarrays)
-                torch.save(model, f"deepcompfedl/saves/exp1bis/pruning{self.pruning_rate}-exp{self.number}.ptmodel")
+                torch.save(model, f"deepcompfedl/saves/exp1bis/pruning{self.pruning_rate}-epochs{self.epochs}-exp{self.number}.ptmodel")
             elif self.model == "ResNet12":
                 model = ResNet12()
                 set_weights(model, aggregated_ndarrays)
-                torch.save(model, f"deepcompfedl/saves/exp2/quant{self.bits_quantization}-exp{self.number}.ptmodel")
+                torch.save(model, f"deepcompfedl/saves/exp2/quant{self.bits_quantization}-epochs{self.epochs}-exp{self.number}.ptmodel")
             else:
                 log(WARNING, "Model couldn't be saved")
 
