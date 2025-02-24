@@ -117,7 +117,6 @@ class DeepCompFedLStrategy(FedAvg):
         fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
         evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
         inplace: bool = True,
-        computer: str = "",
         num_rounds: int = 3,
         dataset: str = "",
         alpha: int | bool = 100,
@@ -159,10 +158,9 @@ class DeepCompFedLStrategy(FedAvg):
         self.bits_quantization = bits_quantization
         
         wandb.init(
-            project="deepcompfedl-exp2",
+            project="deepcompfedl-exp2bis",
             id=f"t-quant{bits_quantization}-exp{number}-epochs{epochs}",
             config={
-                "computer": computer,
                 "aggregation-strategy": "DeepCompFedLStrategy",
                 "num-rounds": num_rounds,
                 "dataset": dataset,
@@ -236,7 +234,7 @@ class DeepCompFedLStrategy(FedAvg):
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
         if server_round == self.num_rounds:
-            save_dir = "deepcompfedl/saves/exp2"
+            save_dir = "deepcompfedl/saves/exp2bis"
 
             os.makedirs(save_dir, exist_ok=True)
             
