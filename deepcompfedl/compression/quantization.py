@@ -5,7 +5,7 @@ from deepcompfedl.task import get_weights, set_weights
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.cluster import KMeans
+from cuml.cluster import KMeans
 from scipy.sparse import csc_matrix, csr_matrix
 
 from flwr.common import NDArrays, Parameters

@@ -15,7 +15,8 @@ dependencies = [
     "scipy>=1.14.1",
     "scikit-learn>=1.5.2",
     "pympler>=1.1",
-    "wandb>=0.19.6"
+    "wandb>=0.19.6",
+    "cuml-cu11==25.2.*", # --extra-index-url=https://pypi.nvidia.com
 ]
 
 [tool.hatch.build.targets.wheel]
