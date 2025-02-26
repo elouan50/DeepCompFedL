@@ -176,8 +176,8 @@ class DeepCompFedLStrategy(FedAvg):
         
         if save_online:
             wandb.init(
-                project="deepcompfedl-exp2bis",
-                id=f"q{bits_quantization}-exp{number}-epochs{epochs}",
+                project="deepcompfedl-quantization",
+                id=f"q{bits_quantization}-i{init_space_quantization}-l{layer_quantization}-e{epochs}-n{number}",
                 config={
                     "aggregation-strategy": "DeepCompFedLStrategy",
                     "num-rounds": num_rounds,
@@ -258,18 +258,18 @@ class DeepCompFedLStrategy(FedAvg):
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
         if server_round == self.num_rounds and self.save_local:
-            save_dir = "deepcompfedl/saves/exp2init"
+            save_dir = "deepcompfedl/saves/exp2quant"
 
             os.makedirs(save_dir, exist_ok=True)
             
             if self.model == "ResNet18":
                 model = ResNet18()
                 set_weights(model, aggregated_ndarrays)
-                torch.save(model, f"deepcompfedl/saves/exp1bis/p{self.pruning_rate}-q{self.bits_quantization}-i{self.init_space_quantization}-e{self.epochs}-n{self.number}.ptmodel")
+                torch.save(model, f"{save_dir}/q{self.bits_quantization}-i{self.init_space_quantization}-l{self.layer_quantization}-e{self.epochs}-n{self.number}.ptmodel")
             elif self.model == "ResNet12":
                 model = ResNet12()
                 set_weights(model, aggregated_ndarrays)
-                torch.save(model, f"deepcompfedl/saves/exp2/quant{self.bits_quantization}-epochs{self.epochs}-exp{self.number}.ptmodel")
+                torch.save(model, f"{save_dir}/q{self.bits_quantization}-i{self.init_space_quantization}-l{self.layer_quantization}-e{self.epochs}-n{self.number}.ptmodel")
             else:
                 log(WARNING, "Model couldn't be saved")
 

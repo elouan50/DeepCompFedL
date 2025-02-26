@@ -28,7 +28,19 @@ from torchvision.models import resnet18
 
 # Define Flower Client and client_fn
 class FlowerClient(NumPyClient):
-    def __init__(self, net, trainloader, valloader, local_epochs, enable_pruning, pruning_rate, enable_quantization, bits_quantization, partition_id):
+    def __init__(self,
+                 net,
+                 trainloader,
+                 valloader,
+                 local_epochs,
+                 enable_pruning,
+                 pruning_rate,
+                 enable_quantization,
+                 bits_quantization,
+                 partition_id,
+                 layer_quantization,
+                 init_space_quantization
+                 ): 
         self.net = net
         self.trainloader = trainloader
         self.valloader = valloader
@@ -38,6 +50,8 @@ class FlowerClient(NumPyClient):
         self.enable_quantization = enable_quantization
         self.bits_quantization = bits_quantization
         self.partition_id = partition_id
+        self.layer_quantization = layer_quantization
+        self.init_space_quantization = init_space_quantization
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.net.to(self.device)
 
@@ -63,7 +77,10 @@ class FlowerClient(NumPyClient):
         ### Apply Quantization
         if self.enable_quantization:
             params = get_weights(self.net)
-            quantize(params, self.bits_quantization)
+            quantize(params,
+                     self.bits_quantization,
+                     self.layer_quantization,
+                     self.init_space_quantization)
             set_weights(self.net, params)
             # if self.partition_id == 0:
             #     print(f"Effective sent quantization (for client {self.partition_id}):")
@@ -98,6 +115,8 @@ def client_fn(context: Context):
     enable_quantization = context.run_config["client-enable-quantization"]
     bits_quantization = context.run_config["client-bits-quantization"]
     model_name = context.run_config["model"]
+    layer_quantization = context.run_config["layer-quantization"]
+    init_space_quantization = context.run_config["init-space-quantization"]
     
     if model_name == "Net":
         net = Net()
@@ -117,7 +136,9 @@ def client_fn(context: Context):
                           pruning_rate,
                           enable_quantization,
                           bits_quantization,
-                          partition_id)
+                          partition_id,
+                          layer_quantization,
+                          init_space_quantization)
 
     
     return client.to_client()
