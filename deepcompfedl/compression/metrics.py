@@ -26,15 +26,12 @@ def pruned_weights(net):
 
 def quantized_model(net):
     list_weights = [0.]
-    
-    for module in net.children():
-        if not(isinstance(module, nn.MaxPool2d)):
-            weight = module.weight.data.cpu().numpy()
-            size = np.size(weight)
-            layer = np.reshape(weight, (size,1))
-            for w in layer:
-                if not(w in list_weights):
-                    list_weights.append(w.item())
+    params = get_weights(net)
+    for p in params:
+        weights = p.reshape(-1)
+        for w in weights:
+            if not(w in list_weights):
+                list_weights.append(w)
     
     print(f"There are {len(list_weights)-1} different weights different than 0 in the model.")
     print(f"These weights are: {list_weights[1:]}")

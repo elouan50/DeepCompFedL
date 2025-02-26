@@ -8,12 +8,10 @@ from flwr.common import Context
 from flwr.common.logger import log
 
 from deepcompfedl.compression.pruning import prune
-from deepcompfedl.compression.quantization import quantize, quantize_layers, quantize_model
+from deepcompfedl.compression.quantization import quantize
 from deepcompfedl.compression.metrics import (
     pruned_weights,
     quantized,
-    quantized_model,
-    quantized_layers,
 )
 
 from deepcompfedl.task import (
