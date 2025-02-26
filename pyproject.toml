@@ -16,7 +16,7 @@ dependencies = [
     "scikit-learn>=1.5.2",
     "pympler>=1.1",
     "wandb>=0.19.6",
-    "cuml-cu11==25.2.*", # --extra-index-url=https://pypi.nvidia.com
+    "cuml-cu11==25.2.*",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -52,5 +52,5 @@ default = "local-simulation"
 
 [tool.flwr.federations.local-simulation]
 options.num-supernodes = 10
-options.backend.client-resources.num-cpus = 32
+options.backend.client-resources.num-cpus = 32 # the number of available CPUs
 options.backend.client-resources.num-gpus = 1

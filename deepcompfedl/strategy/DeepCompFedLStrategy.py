@@ -167,6 +167,7 @@ class DeepCompFedLStrategy(FedAvg):
                 "dataset": dataset,
                 "alpha": alpha,
                 "model": model,
+                "epochs": epochs,
                 "fraction-fit": fraction_fit,
                 "server-enable-pruning": enable_pruning,
                 "server-pruning-rate": pruning_rate,

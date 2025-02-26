@@ -13,8 +13,6 @@ from deepcompfedl.task import (
 from deepcompfedl.models.net import Net
 from deepcompfedl.models.resnet12 import ResNet12
 from deepcompfedl.models.resnet18 import ResNet18
-# from deepcompfedl.models.resnets import ResNet18
-
 
 from torchvision.models import resnet18
 
