@@ -1,4 +1,20 @@
-"""DeepCompFedL: A Flower / PyTorch app."""
+"""DeepCompFedL: A Flower / PyTorch app.
+
+This module provides functions to analyze and measure various aspects of a neural network model, 
+including pruning, quantization, and memory size.
+Functions:
+    pruned_weights(net):
+        Calculates and prints the global pruning percentage of the network.
+    quantized_model(net):
+        Identifies and prints the number of unique non-zero weights in the entire model.
+    quantized_layers(net):
+        Analyzes each layer of the network and prints the number of unique non-zero weights per layer.
+    quantized(params):
+        Analyzes a list of parameters and prints the number of unique non-zero weights per layer.
+    size_var(net):
+        Calculates and prints the memory size of the network in bytes.
+
+"""
 
 from pympler import asizeof
 

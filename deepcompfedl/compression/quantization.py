@@ -1,4 +1,11 @@
-"""DeepCompFedL: A Flower / PyTorch app."""
+"""DeepCompFedL: A Flower / PyTorch app.
+
+This module provides functionality for quantizing the weights of a model using K-Means clustering.
+Functions:
+    quantize(params: NDArrays, nbits: int = 8, layer_scale: bool = True) -> NDArrays
+            layer_scale (bool, optional): If the quantization is applied to layers separately (True) or all weights at the same time (False). Defaults to True.
+
+"""
 
 import numpy as np
 from cuml.cluster import KMeans

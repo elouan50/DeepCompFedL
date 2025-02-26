@@ -1,3 +1,7 @@
+"""DeepCompFedL: A Flower / PyTorch app.
+This module provides a graphical user interface (GUI) for configuring federated learning parameters using Tkinter.
+"""
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.font import Font

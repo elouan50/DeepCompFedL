@@ -1,3 +1,19 @@
+"""DeepCompFedL: A Flower / PyTorch app.
+
+This module defines the ResNet12 model and its basic building block, BasicBlockRN12.
+Classes:
+    BasicBlockRN12(nn.Module): A basic block for ResNet12 consisting of three convolutional layers with GroupNorm and Leaky ReLU activations.
+    ResNet12(nn.Module): A ResNet12 model composed of multiple BasicBlockRN12 blocks, followed by a fully connected layer for classification.
+BasicBlockRN12:
+    Methods:
+        __init__(self, in_planes, planes): Initializes the BasicBlockRN12 with the given input and output planes.
+        forward(self, x): Defines the forward pass of the BasicBlockRN12.
+ResNet12:
+    Methods:
+        __init__(self, feature_maps: int = 16, input_shape: tuple = (3,32,32), num_classes: int = 10): Initializes the ResNet12 model with the given feature maps, input shape, and number of classes.
+        forward(self, x): Defines the forward pass of the ResNet12 model.
+"""
+
 import torch.nn as nn
 import torch.nn.functional as F
 

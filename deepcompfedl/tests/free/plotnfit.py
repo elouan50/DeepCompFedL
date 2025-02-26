@@ -1,3 +1,9 @@
+"""
+This file aims to test correlation between the steps and the accuracy
+values of a neural network training process, and to fit a first-order
+model to the data. The model is then evaluated and plotted.
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
