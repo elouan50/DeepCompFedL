@@ -91,8 +91,16 @@ class DeepCompFedLStrategy(FedAvg):
         Enable (True) or disable (False) quantization of model updates, optional. Defaults to False.
     bits_quantization : int (default: 32)
         Number of bits to represent the quantized model, optional.
+    layer_quantization : bool (default: True)
+        Enable (True) or disable (False) layer-wise quantization, optional. Defaults to True.
+    init_space_quantization : str (default: "uniform")
+        Initialization space for the K-Means clustering, optional. Defaults to "uniform".
     number : int (default: 1)
         ID of the pass we call the experiment
+    save_online : bool (default: False)
+        Save the results online, optional. Defaults to False.
+    save_local : bool (default: False)
+        Save the results locally, optional. Defaults to False.
     """
 
     # pylint: disable=too-many-arguments,too-many-instance-attributes, line-too-long
@@ -126,7 +134,11 @@ class DeepCompFedLStrategy(FedAvg):
         pruning_rate: float = 0.,
         enable_quantization: bool = False,
         bits_quantization: int = 32,
+        layer_quantization: bool = True,
+        init_space_quantization: str = "uniform",
         number: int = 1,
+        save_online: bool = False,
+        save_local: bool = False,
     ) -> None:
         super().__init__()
 
@@ -153,28 +165,35 @@ class DeepCompFedLStrategy(FedAvg):
         self.epochs = epochs
         self.num_rounds = num_rounds
         self.number = number
+        self.save_online = save_online
+        self.save_local = save_local
         self.enable_pruning = enable_pruning
         self.pruning_rate = pruning_rate
         self.enable_quantization = enable_quantization
         self.bits_quantization = bits_quantization
+        self.layer_quantization = layer_quantization
+        self.init_space_quantization = init_space_quantization
         
-        wandb.init(
-            project="deepcompfedl-exp2bis",
-            id=f"t-quant{bits_quantization}-exp{number}-epochs{epochs}",
-            config={
-                "aggregation-strategy": "DeepCompFedLStrategy",
-                "num-rounds": num_rounds,
-                "dataset": dataset,
-                "alpha": alpha,
-                "model": model,
-                "epochs": epochs,
-                "fraction-fit": fraction_fit,
-                "server-enable-pruning": enable_pruning,
-                "server-pruning-rate": pruning_rate,
-                "server-enable-quantization": enable_quantization,
-                "server-bits-quantization": bits_quantization,
-            },
-        )
+        if save_online:
+            wandb.init(
+                project="deepcompfedl-exp2bis",
+                id=f"q{bits_quantization}-exp{number}-epochs{epochs}",
+                config={
+                    "aggregation-strategy": "DeepCompFedLStrategy",
+                    "num-rounds": num_rounds,
+                    "dataset": dataset,
+                    "alpha": alpha,
+                    "model": model,
+                    "epochs": epochs,
+                    "fraction-fit": fraction_fit,
+                    "server-enable-pruning": enable_pruning,
+                    "server-pruning-rate": pruning_rate,
+                    "server-enable-quantization": enable_quantization,
+                    "server-bits-quantization": bits_quantization,
+                    "server-layer-quantization": layer_quantization,
+                    "server-init-space-quantization": init_space_quantization,
+                },
+            )
 
     def configure_fit(
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
@@ -193,7 +212,10 @@ class DeepCompFedLStrategy(FedAvg):
         
         if self.enable_quantization:
             ndarrays = parameters_to_ndarrays(parameters)
-            ndarrays = quantize(ndarrays, self.bits_quantization)
+            ndarrays = quantize(ndarrays,
+                                self.bits_quantization,
+                                self.layer_quantization,
+                                self.init_space_quantization)
             parameters = ndarrays_to_parameters(ndarrays)
         
         fit_ins = FitIns(parameters, config)
@@ -235,15 +257,15 @@ class DeepCompFedLStrategy(FedAvg):
 
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
-        if server_round == self.num_rounds:
-            save_dir = "deepcompfedl/saves/exp2bis"
+        if server_round == self.num_rounds and self.save_local:
+            save_dir = "deepcompfedl/saves/exp2init"
 
             os.makedirs(save_dir, exist_ok=True)
             
             if self.model == "ResNet18":
                 model = ResNet18()
                 set_weights(model, aggregated_ndarrays)
-                torch.save(model, f"deepcompfedl/saves/exp1bis/pruning{self.pruning_rate}-epochs{self.epochs}-exp{self.number}.ptmodel")
+                torch.save(model, f"deepcompfedl/saves/exp1bis/p{self.pruning_rate}-q{self.bits_quantization}-i{self.init_space_quantization}-e{self.epochs}-n{self.number}.ptmodel")
             elif self.model == "ResNet12":
                 model = ResNet12()
                 set_weights(model, aggregated_ndarrays)
@@ -256,7 +278,8 @@ class DeepCompFedLStrategy(FedAvg):
         if self.fit_metrics_aggregation_fn:
             fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
-            wandb.log(metrics_aggregated, step=server_round)
+            if self.save_online:
+                wandb.log(metrics_aggregated, step=server_round)
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No fit_metrics_aggregation_fn provided")
 
@@ -288,7 +311,8 @@ class DeepCompFedLStrategy(FedAvg):
         if self.evaluate_metrics_aggregation_fn:
             eval_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.evaluate_metrics_aggregation_fn(eval_metrics)
-            wandb.log(metrics_aggregated, step=server_round)
+            if self.save_online:
+                wandb.log(metrics_aggregated, step=server_round)
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No evaluate_metrics_aggregation_fn provided")
 

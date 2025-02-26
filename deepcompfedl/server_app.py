@@ -14,8 +14,6 @@ from deepcompfedl.models.net import Net
 from deepcompfedl.models.resnet12 import ResNet12
 from deepcompfedl.models.resnet18 import ResNet18
 
-from torchvision.models import resnet18
-
 def server_fn(context: Context):
     # Read from config
     num_rounds = context.run_config["server-rounds"]
@@ -28,7 +26,11 @@ def server_fn(context: Context):
     pruning_rate = context.run_config["server-pruning-rate"]
     enable_quantization = context.run_config["server-enable-quantization"]
     bits_quantization = context.run_config["server-bits-quantization"]
+    layer_quantization = context.run_config["layer-quantization"]
+    init_space_quantization = context.run_config["init-space-quantization"]
     number = context.run_config["number"]
+    save_online = context.run_config["save-online"]
+    save_local = context.run_config["save-local"]
     alpha = context.run_config["alpha"]
 
     # Initialize model parameters
@@ -64,7 +66,11 @@ def server_fn(context: Context):
             pruning_rate=pruning_rate,
             enable_quantization=enable_quantization,
             bits_quantization=bits_quantization,
+            layer_quantization=layer_quantization,
+            init_space_quantization=init_space_quantization,
             number=number,
+            save_online=save_online,
+            save_local=save_local,
         )
     elif aggregation_strategy == "FedAvg":
         strategy = FedAvg(

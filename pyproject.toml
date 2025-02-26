@@ -41,11 +41,15 @@ client-enable-pruning = false
 client-pruning-rate = 0.25
 client-enable-quantization = false
 client-bits-quantization = 32
+layer-quantization = true
+init-space-quantization = "uniform"
 model = "Net"
 dataset = "CIFAR-10"
 fraction-fit = 0.2
 alpha=100
 number=1
+save-online = false
+save-local = false
 
 [tool.flwr.federations]
 default = "local-simulation"
