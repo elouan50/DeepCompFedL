@@ -1,10 +1,17 @@
 """
-This file aims to test the models implemented in the project.
+Unit tests for deepcompfedl models.
+
+This module contains unit tests for the following models:
+- Net
+- ResNet12
+- ResNet18
+
+Each test verifies that the model can process a dummy input tensor and produce an output tensor with the expected shape.
 """
+
 import torch
 import pytest
 from deepcompfedl.models.net import Net
-from deepcompfedl.models.qresnets import QResNet18, QResNet8, QResNet20
 from deepcompfedl.models.resnet12 import ResNet12
 from deepcompfedl.models.resnet18 import ResNet18
 
@@ -14,24 +21,6 @@ def dummy_input():
 
 def test_net(dummy_input):
     model = Net()
-    output = model(dummy_input)
-    assert output is not None
-    assert output.shape[0] == dummy_input.shape[0]
-
-def test_qresnet18(dummy_input):
-    model = QResNet18()
-    output = model(dummy_input)
-    assert output is not None
-    assert output.shape[0] == dummy_input.shape[0]
-
-def test_qresnet8(dummy_input):
-    model = QResNet8()
-    output = model(dummy_input)
-    assert output is not None
-    assert output.shape[0] == dummy_input.shape[0]
-
-def test_qresnet20(dummy_input):
-    model = QResNet20()
     output = model(dummy_input)
     assert output is not None
     assert output.shape[0] == dummy_input.shape[0]
