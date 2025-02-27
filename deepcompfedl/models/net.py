@@ -1,3 +1,15 @@
+"""DeepCompFedL: A Flower / PyTorch app.
+
+This module defines a simple Convolutional Neural Network (CNN) model using PyTorch.
+
+Classes:
+    Net: A simple CNN model adapted from 'PyTorch: A 60 Minute Blitz'.
+
+Net class:
+    Methods:
+        __init__(): Initializes the CNN model with two convolutional layers, two pooling layers, and three fully connected layers.
+        forward(x): Defines the forward pass of the network. Takes an input tensor `x` and returns the output tensor after passing through the network.
+"""
 
 import torch.nn as nn
 import torch.nn.functional as F

@@ -1,6 +1,15 @@
-"""DeepCompFedL: A Flower / PyTorch app."""
+""" DeepCompFedL: A Flower / PyTorch app.
 
-from deepcompfedl.task import get_weights, set_weights
+This module provides functionality for pruning model parameters in a federated learning setting.
+Functions:
+    prune(params, pruning_rate: float = 0.1) -> list:
+        Prunes the given parameters by setting values below a certain threshold to zero.
+        Args:
+            params (list): A list of numpy arrays representing the model parameters.
+            pruning_rate (float): The fraction of parameters to prune. Default is 0.1.
+        Returns:
+            list: The pruned parameters.
+"""
 
 import numpy as np
 import torch

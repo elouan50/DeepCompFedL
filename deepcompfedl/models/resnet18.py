@@ -1,8 +1,15 @@
-"""
-This implementation of the ResNet18 comes directly from
-https://github.com/samcw/ResNet18-Pytorch
-"""
+"""DeepCompFedL: A Flower / PyTorch app.
 
+This implementation of the ResNet18 comes directly from
+https://github.com/samcw/ResNet18-Pytorch/
+
+Classes:
+    ResidualBlock: Defines a residual block used in ResNet18.
+    ResNet: Defines the ResNet18 architecture.
+    
+Functions:
+    ResNet18: Returns an instance of the ResNet18 model.
+"""
 
 from torch import nn
 from torch.nn import functional as F

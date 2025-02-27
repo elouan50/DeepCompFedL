@@ -15,7 +15,8 @@ dependencies = [
     "scipy>=1.14.1",
     "scikit-learn>=1.5.2",
     "pympler>=1.1",
-    "wandb>=0.19.6"
+    "wandb>=0.19.6",
+    "cuml-cu11==25.2.*",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -40,17 +41,20 @@ client-enable-pruning = false
 client-pruning-rate = 0.25
 client-enable-quantization = false
 client-bits-quantization = 32
-computer = "hiwi5"
+layer-quantization = true
+init-space-quantization = "uniform"
 model = "Net"
 dataset = "CIFAR-10"
 fraction-fit = 0.2
 alpha=100
 number=1
+save-online = false
+save-local = false
 
 [tool.flwr.federations]
 default = "local-simulation"
 
 [tool.flwr.federations.local-simulation]
-options.num-supernodes = 100
-options.backend.client-resources.num-cpus = 32
+options.num-supernodes = 10
+options.backend.client-resources.num-cpus = 32 # the number of available CPUs
 options.backend.client-resources.num-gpus = 1

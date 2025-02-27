@@ -1,21 +1,34 @@
+"""
+This file aims to test and understand the Dirichlet distribution.
+Feel free to modify the following parameters.
+"""
+
 from deepcompfedl.task import load_data
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
+# Parameters
 dataset = "cifar10"
 num_classes = 10
 num_partitions = 100
 alpha = 0.1
+
+
+# Fetch and analyse the distribution among clients
+
 distr = np.zeros((num_partitions, num_classes))
 
 for partition_id in range(num_partitions):
+    # First, fetch the local partition for this client
     trainloader, valloader = load_data(partition_id, num_partitions, alpha, dataset)
     
+    # Count in the evaluation batches
     for batch in valloader:
         for label in batch["label"]:
             distr[partition_id, label] += 1
             
+    # Count in the training batches
     for batch in trainloader:
         for label in batch["label"]:
             distr[partition_id, label] += 1
@@ -62,4 +75,5 @@ def plot_colored_bars(matrix):
     plt.show()
 
 
+# Plot the result
 plot_colored_bars(distr)

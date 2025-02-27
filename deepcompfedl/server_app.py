@@ -13,16 +13,11 @@ from deepcompfedl.task import (
 from deepcompfedl.models.net import Net
 from deepcompfedl.models.resnet12 import ResNet12
 from deepcompfedl.models.resnet18 import ResNet18
-# from deepcompfedl.models.resnets import ResNet18
-
-
-from torchvision.models import resnet18
 
 def server_fn(context: Context):
     # Read from config
     num_rounds = context.run_config["server-rounds"]
     dataset = context.run_config["dataset"]
-    computer = context.run_config["computer"]
     client_epochs = context.run_config["client-epochs"]
     fraction_fit = context.run_config["fraction-fit"]
     aggregation_strategy = context.run_config["aggregation-strategy"]
@@ -31,14 +26,18 @@ def server_fn(context: Context):
     pruning_rate = context.run_config["server-pruning-rate"]
     enable_quantization = context.run_config["server-enable-quantization"]
     bits_quantization = context.run_config["server-bits-quantization"]
+    layer_quantization = context.run_config["layer-quantization"]
+    init_space_quantization = context.run_config["init-space-quantization"]
     number = context.run_config["number"]
+    save_online = context.run_config["save-online"]
+    save_local = context.run_config["save-local"]
     alpha = context.run_config["alpha"]
 
     # Initialize model parameters
     if model_name == "Net":
         model = Net()
     elif model_name == "ResNet12":
-        model = ResNet12(16, (3,32,32), 10) # Might have to use 64 as first parameter??
+        model = ResNet12() # Might have to use 64 as first parameter??
     elif model_name == "ResNet18":
         model = ResNet18()
         # model = resnet18(num_classes=10)
@@ -58,7 +57,6 @@ def server_fn(context: Context):
             initial_parameters=parameters,
             evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn,
             fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
-            computer=computer,
             num_rounds=num_rounds,
             dataset=dataset,
             alpha=alpha,
@@ -68,7 +66,11 @@ def server_fn(context: Context):
             pruning_rate=pruning_rate,
             enable_quantization=enable_quantization,
             bits_quantization=bits_quantization,
+            layer_quantization=layer_quantization,
+            init_space_quantization=init_space_quantization,
             number=number,
+            save_online=save_online,
+            save_local=save_local,
         )
     elif aggregation_strategy == "FedAvg":
         strategy = FedAvg(

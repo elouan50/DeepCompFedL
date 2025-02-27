@@ -8,11 +8,10 @@ from flwr.common import Context
 from flwr.common.logger import log
 
 from deepcompfedl.compression.pruning import prune
-from deepcompfedl.compression.quantization import quantize_layers, quantize_model
+from deepcompfedl.compression.quantization import quantize
 from deepcompfedl.compression.metrics import (
     pruned_weights,
-    quantized_model,
-    quantized_layers,
+    quantized,
 )
 
 from deepcompfedl.task import (
@@ -29,7 +28,19 @@ from torchvision.models import resnet18
 
 # Define Flower Client and client_fn
 class FlowerClient(NumPyClient):
-    def __init__(self, net, trainloader, valloader, local_epochs, enable_pruning, pruning_rate, enable_quantization, bits_quantization, partition_id):
+    def __init__(self,
+                 net,
+                 trainloader,
+                 valloader,
+                 local_epochs,
+                 enable_pruning,
+                 pruning_rate,
+                 enable_quantization,
+                 bits_quantization,
+                 partition_id,
+                 layer_quantization,
+                 init_space_quantization
+                 ): 
         self.net = net
         self.trainloader = trainloader
         self.valloader = valloader
@@ -39,6 +50,8 @@ class FlowerClient(NumPyClient):
         self.enable_quantization = enable_quantization
         self.bits_quantization = bits_quantization
         self.partition_id = partition_id
+        self.layer_quantization = layer_quantization
+        self.init_space_quantization = init_space_quantization
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.net.to(self.device)
 
@@ -63,10 +76,15 @@ class FlowerClient(NumPyClient):
         
         ### Apply Quantization
         if self.enable_quantization:
-            quantize_layers(self.net, self.bits_quantization)
-            if self.partition_id == 0:
-                print(f"Effective sent quantization (for client {self.partition_id}):")
-                quantized_layers(self.net)
+            params = get_weights(self.net)
+            quantize(params,
+                     self.bits_quantization,
+                     self.layer_quantization,
+                     self.init_space_quantization)
+            set_weights(self.net, params)
+            # if self.partition_id == 0:
+            #     print(f"Effective sent quantization (for client {self.partition_id}):")
+            #     quantized(self.net)
         end = time.perf_counter()
         
         return get_weights(self.net), len(self.trainloader.dataset), {"train_loss": train_loss, "training-time": float((end - begin)*1000)}
@@ -97,11 +115,13 @@ def client_fn(context: Context):
     enable_quantization = context.run_config["client-enable-quantization"]
     bits_quantization = context.run_config["client-bits-quantization"]
     model_name = context.run_config["model"]
+    layer_quantization = context.run_config["layer-quantization"]
+    init_space_quantization = context.run_config["init-space-quantization"]
     
     if model_name == "Net":
         net = Net()
     elif model_name == "ResNet12":
-        net = ResNet12(16, (3,32,32), 10)
+        net = ResNet12()
     elif model_name == "ResNet18":
         net = ResNet18()
         # net = resnet18(num_classes=10)
@@ -116,7 +136,9 @@ def client_fn(context: Context):
                           pruning_rate,
                           enable_quantization,
                           bits_quantization,
-                          partition_id)
+                          partition_id,
+                          layer_quantization,
+                          init_space_quantization)
 
     
     return client.to_client()

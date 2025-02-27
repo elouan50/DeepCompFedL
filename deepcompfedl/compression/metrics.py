@@ -1,4 +1,20 @@
-"""DeepCompFedL: A Flower / PyTorch app."""
+"""DeepCompFedL: A Flower / PyTorch app.
+
+This module provides functions to analyze and measure various aspects of a neural network model, 
+including pruning, quantization, and memory size.
+Functions:
+    pruned_weights(net):
+        Calculates and prints the global pruning percentage of the network.
+    quantized_model(net):
+        Identifies and prints the number of unique non-zero weights in the entire model.
+    quantized_layers(net):
+        Analyzes each layer of the network and prints the number of unique non-zero weights per layer.
+    quantized(params):
+        Analyzes a list of parameters and prints the number of unique non-zero weights per layer.
+    size_var(net):
+        Calculates and prints the memory size of the network in bytes.
+
+"""
 
 from pympler import asizeof
 
@@ -26,15 +42,12 @@ def pruned_weights(net):
 
 def quantized_model(net):
     list_weights = [0.]
-    
-    for module in net.children():
-        if not(isinstance(module, nn.MaxPool2d)):
-            weight = module.weight.data.cpu().numpy()
-            size = np.size(weight)
-            layer = np.reshape(weight, (size,1))
-            for w in layer:
-                if not(w in list_weights):
-                    list_weights.append(w.item())
+    params = get_weights(net)
+    for p in params:
+        weights = p.reshape(-1)
+        for w in weights:
+            if not(w in list_weights):
+                list_weights.append(w)
     
     print(f"There are {len(list_weights)-1} different weights different than 0 in the model.")
     print(f"These weights are: {list_weights[1:]}")
@@ -50,7 +63,7 @@ def quantized_layers(net):
         elif isinstance(module, nn.GroupNorm):
             pass
         else:
-            print(f"{type(module)} is being examined")
+            # print(f"{type(module)} is being examined")
             weight = module.weight.data.cpu().numpy()
             size = np.size(weight)
             layer = np.reshape(weight, (size,1))
@@ -61,6 +74,16 @@ def quantized_layers(net):
 
             print(f"    Layer {module.__class__.__name__}: there are {len(list_weights)-1} different weights different than 0.")
             # print(f"These weights are: {list_weights}")
+
+def quantized(params):
+    for layer in params:
+        weights = layer.reshape(-1)
+        list_weights = [0.]
+        for w in weights:
+            if not(w in list_weights):
+                list_weights.append(w)
+        print(f"{len(list_weights)-1} different non-null weights values on this layer")
+
 
 def size_var(net):
     size = asizeof.asizeof(net)
