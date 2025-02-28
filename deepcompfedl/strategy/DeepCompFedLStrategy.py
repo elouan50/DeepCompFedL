@@ -204,20 +204,6 @@ class DeepCompFedLStrategy(FedAvg):
             # Custom fit config function provided
             config = self.on_fit_config_fn(server_round)
         
-        # Prune the parameters sent to client
-        if self.enable_pruning:
-            ndarrays = parameters_to_ndarrays(parameters)
-            ndarrays = prune(ndarrays, self.pruning_rate)
-            parameters = ndarrays_to_parameters(ndarrays)
-        
-        if self.enable_quantization:
-            ndarrays = parameters_to_ndarrays(parameters)
-            ndarrays = quantize(ndarrays,
-                                self.bits_quantization,
-                                self.layer_quantization,
-                                self.init_space_quantization)
-            parameters = ndarrays_to_parameters(ndarrays)
-        
         fit_ins = FitIns(parameters, config)
 
         # Sample clients
@@ -254,6 +240,16 @@ class DeepCompFedLStrategy(FedAvg):
                 for _, fit_res in results
             ]
             aggregated_ndarrays = aggregate(weights_results)
+        
+        # Prune the parameters sent to client
+        if self.enable_pruning:
+            aggregated_ndarrays = prune(aggregated_ndarrays, self.pruning_rate)
+        
+        if self.enable_quantization:
+            aggregated_ndarrays = quantize(aggregated_ndarrays,
+                                            self.bits_quantization,
+                                            self.layer_quantization,
+                                            self.init_space_quantization)
 
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
