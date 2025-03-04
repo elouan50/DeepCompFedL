@@ -11,8 +11,6 @@ do
             echo "Experiment with pruning rate $prate and $epochs local epochs."
             flwr run --run-config "
                                 server-rounds=100
-                                server-enable-pruning=true
-                                server-pruning-rate=$prate
                                 client-enable-pruning=true
                                 client-pruning-rate=$prate
                                 model='ResNet12'
@@ -20,6 +18,9 @@ do
                                 aggregation-strategy='DeepCompFedLStrategy'
                                 client-epochs=$epochs
                                 number=$number
+                                alpha=100
+                                save-online=true
+                                save-local=true
                                 "
         done
     done

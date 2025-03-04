@@ -4,6 +4,7 @@
 # - quantization bits
 # - number of clients epochs
 # - initial space quantization
+# - layer-wise or model-wise quantization
 
 
 for number in 1 2 3
@@ -19,8 +20,6 @@ do
                     echo "Experiment with quantization on $qbits bits and $epochs local epochs."
                     flwr run --run-config "
                                         server-rounds=100
-                                        server-enable-quantization=true
-                                        server-bits-quantization=$qbits
                                         client-enable-quantization=true
                                         client-bits-quantization=$qbits
                                         model='ResNet12'
@@ -28,6 +27,7 @@ do
                                         aggregation-strategy='DeepCompFedLStrategy'
                                         client-epochs=$epochs
                                         number=$number
+                                        alpha=100
                                         init-space-quantization='$init_space'
                                         layer-quantization=$lq
                                         save-online=true
