@@ -186,7 +186,7 @@ advanced_frame.grid(row=2, column=0, padx=10, pady=5, sticky="W")
 # Model
 ttk.Label(advanced_frame, text="Model: ").grid(row=0, column=0, sticky="W")
 model_var = tk.StringVar(value="ResNet12")
-model_menu = ttk.Combobox(advanced_frame, textvariable=model_var, values=["ResNet12", "ResNet18", "Net", "other (None)"], state="readonly")
+model_menu = ttk.Combobox(advanced_frame, textvariable=model_var, values=["ResNet12", "ResNet18", "QResNet18", "Net", "other (None)"], state="readonly")
 model_menu.grid(row=0, column=1, sticky="W")
 
 

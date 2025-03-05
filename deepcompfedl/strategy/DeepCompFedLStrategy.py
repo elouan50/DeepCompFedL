@@ -31,6 +31,7 @@ from deepcompfedl.compression.quantization import quantize
 from deepcompfedl.task import set_weights
 from deepcompfedl.models.resnet18 import ResNet18
 from deepcompfedl.models.resnet12 import ResNet12
+from deepcompfedl.models.qresnet18 import QResNet18
 
 WARNING_MIN_AVAILABLE_CLIENTS_TOO_LOW = """
 Setting `min_available_clients` lower than `min_fit_clients` or
@@ -265,7 +266,11 @@ class DeepCompFedLStrategy(FedAvg):
             elif self.model == "ResNet12":
                 model = ResNet12()
                 set_weights(model, aggregated_ndarrays)
-                torch.save(model, f"{save_dir}/q{self.bits_quantization}-i{self.init_space_quantization}-l{self.layer_quantization}-e{self.epochs}-n{self.number}.ptmodel")
+                torch.save(model, f"{save_dir}/p{self.pruning_rate}-q{self.bits_quantization}-e{self.epochs}-n{self.number}.ptmodel")
+            elif self.model == "QResNet18":
+                model = QResNet18()
+                set_weights(model, aggregated_ndarrays)
+                torch.save(model, f"{save_dir}/p{self.pruning_rate}-q{self.bits_quantization}-e{self.epochs}-n{self.number}.ptmodel")
             else:
                 log(WARNING, "Model couldn't be saved")
 

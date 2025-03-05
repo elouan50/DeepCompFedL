@@ -24,7 +24,7 @@ from deepcompfedl.task import (
 from deepcompfedl.models.net import Net
 from deepcompfedl.models.resnet12 import ResNet12
 from deepcompfedl.models.resnet18 import ResNet18
-from torchvision.models import resnet18
+from deepcompfedl.models.qresnet18 import QResNet18
 
 # Define Flower Client and client_fn
 class FlowerClient(NumPyClient):
@@ -124,7 +124,8 @@ def client_fn(context: Context):
         net = ResNet12()
     elif model_name == "ResNet18":
         net = ResNet18()
-        # net = resnet18(num_classes=10)
+    elif model_name == "QResNet18":
+        net = QResNet18()
     else:
         log(WARNING, "No existing model provided")
     
