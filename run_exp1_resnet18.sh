@@ -10,7 +10,7 @@ do
         flwr run --run-config "
                             server-rounds=1000
                             client-enable-pruning=true
-                            client-pruning-rate=$prate
+                            pruning-rate=$prate
                             model='ResNet18'
                             fraction-fit=0.1
                             aggregation-strategy='DeepCompFedLStrategy'

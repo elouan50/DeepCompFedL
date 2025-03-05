@@ -111,9 +111,9 @@ def client_fn(context: Context):
     trainloader, valloader = load_data(partition_id, num_partitions, alpha, dataset)
     local_epochs = context.run_config["client-epochs"]
     enable_pruning = context.run_config["client-enable-pruning"]
-    pruning_rate = context.run_config["client-pruning-rate"]
+    pruning_rate = context.run_config["pruning-rate"]
     enable_quantization = context.run_config["client-enable-quantization"]
-    bits_quantization = context.run_config["client-bits-quantization"]
+    bits_quantization = context.run_config["bits-quantization"]
     model_name = context.run_config["model"]
     layer_quantization = context.run_config["layer-quantization"]
     init_space_quantization = context.run_config["init-space-quantization"]

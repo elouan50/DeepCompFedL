@@ -21,7 +21,7 @@ do
                     flwr run --run-config "
                                         server-rounds=100
                                         client-enable-quantization=true
-                                        client-bits-quantization=$qbits
+                                        bits-quantization=$qbits
                                         model='ResNet12'
                                         fraction-fit=0.4
                                         aggregation-strategy='DeepCompFedLStrategy'
