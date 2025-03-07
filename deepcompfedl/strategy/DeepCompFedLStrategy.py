@@ -245,7 +245,7 @@ class DeepCompFedLStrategy(FedAvg):
         if self.enable_pruning:
             aggregated_ndarrays = prune(aggregated_ndarrays, self.pruning_rate)
         
-        if self.enable_quantization:
+        if self.enable_quantization and self.model[0] != "Q":
             aggregated_ndarrays = quantize(aggregated_ndarrays,
                                             self.bits_quantization,
                                             self.layer_quantization,

@@ -31,6 +31,7 @@ from deepcompfedl.models.qresnet18 import QResNet18
 class FlowerClient(NumPyClient):
     def __init__(self,
                  net,
+                 model_name,
                  trainloader,
                  valloader,
                  local_epochs,
@@ -43,6 +44,7 @@ class FlowerClient(NumPyClient):
                  init_space_quantization
                  ): 
         self.net = net
+        self.model_name = model_name
         self.trainloader = trainloader
         self.valloader = valloader
         self.local_epochs = local_epochs
@@ -76,7 +78,7 @@ class FlowerClient(NumPyClient):
                 pruned_weights(self.net)
         
         ### Apply Quantization
-        if self.enable_quantization:
+        if self.enable_quantization and self.model_name[0] != "Q":
             params = get_weights(self.net)
             quantize(params,
                      self.bits_quantization,
@@ -133,6 +135,7 @@ def client_fn(context: Context):
         log(WARNING, "No existing model provided")
     
     client = FlowerClient(net,
+                          model_name,
                           trainloader,
                           valloader,
                           local_epochs,
