@@ -47,7 +47,7 @@ fraction-fit = 0.2
 alpha=100
 number=1
 save-online = false
-save-local = false
+save-local = true
 
 [tool.flwr.federations]
 default = "local-simulation"
