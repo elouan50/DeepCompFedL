@@ -31,6 +31,7 @@ from deepcompfedl.compression.quantization import quantize
 from deepcompfedl.task import set_weights
 from deepcompfedl.models.resnet18 import ResNet18
 from deepcompfedl.models.resnet12 import ResNet12
+from deepcompfedl.models.qresnet12 import QResNet12
 from deepcompfedl.models.qresnet18 import QResNet18
 
 WARNING_MIN_AVAILABLE_CLIENTS_TOO_LOW = """
@@ -189,12 +190,8 @@ class DeepCompFedLStrategy(FedAvg):
                     "model": model,
                     "epochs": epochs,
                     "fraction-fit": fraction_fit,
-                    "server-enable-pruning": enable_pruning,
-                    "server-pruning-rate": pruning_rate,
-                    "server-enable-quantization": enable_quantization,
-                    "server-bits-quantization": bits_quantization,
-                    "server-layer-quantization": layer_quantization,
-                    "server-init-space-quantization": init_space_quantization,
+                    "pruning-rate": pruning_rate,
+                    "bits-quantization": bits_quantization,
                 },
             )
 
@@ -257,7 +254,7 @@ class DeepCompFedLStrategy(FedAvg):
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
         if server_round == self.num_rounds and self.save_local:
-            save_dir = f"deepcompfedl/saves/{model.lower()}-r{self.num_rounds}"
+            save_dir = f"deepcompfedl/saves/{self.model.lower()}-r{self.num_rounds}"
 
             os.makedirs(save_dir, exist_ok=True)
             
@@ -269,10 +266,14 @@ class DeepCompFedLStrategy(FedAvg):
                 model = ResNet12()
                 set_weights(model, aggregated_ndarrays)
                 torch.save(model, f"{save_dir}/{self.id}.ptmodel")
-            elif self.model == "QResNet18":
-                model = QResNet18()
+            elif self.model == "QResNet12":
+                model = QResNet12(self.bits_quantization)
                 set_weights(model, aggregated_ndarrays)
-                torch.save(model, f"{save_dir}/{self.id}.ptmodel")
+                torch.save(model.state_dict(), f"{save_dir}/{self.id}.ptmodel")
+            elif self.model == "QResNet18":
+                model = QResNet18(self.bits_quantization)
+                set_weights(model, aggregated_ndarrays)
+                torch.save(model.state_dict(), f"{save_dir}/{self.id}.ptmodel")
             else:
                 log(WARNING, "Model couldn't be saved")
 

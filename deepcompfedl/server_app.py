@@ -13,6 +13,7 @@ from deepcompfedl.task import (
 from deepcompfedl.models.net import Net
 from deepcompfedl.models.resnet12 import ResNet12
 from deepcompfedl.models.resnet18 import ResNet18
+from deepcompfedl.models.qresnet12 import QResNet12
 from deepcompfedl.models.qresnet18 import QResNet18
 
 def server_fn(context: Context):
@@ -41,8 +42,10 @@ def server_fn(context: Context):
         model = ResNet12() # Might have to use 64 as first parameter??
     elif model_name == "ResNet18":
         model = ResNet18()
+    elif model_name == "QResNet12":
+        model = QResNet12(bits_quantization)
     elif model_name == "QResNet18":
-        model = QResNet18()
+        model = QResNet18(bits_quantization)
     else:
         model = None
         print("Model not recognized")
