@@ -17,6 +17,7 @@ dependencies = [
     "pympler>=1.1",
     "wandb>=0.19.6",
     "cuml-cu11==25.2.*",
+    "brevitas==0.11.0",
 ]
 
 [tool.hatch.build.targets.wheel]
