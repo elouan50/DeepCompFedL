@@ -41,7 +41,7 @@ dict_tranforms_test = {
 fds = None  # Cache FederatedDataset
 
 
-def load_data(partition_id: int, num_partitions: int, alpha: int | float, dataset: str):
+def load_data(partition_id: int, num_partitions: int, alpha: int | float, dataset: str, batch_size: int = 32):
     """Load partition CIFAR10 data."""
     # Only initialize `FederatedDataset` once
     global fds
@@ -69,8 +69,8 @@ def load_data(partition_id: int, num_partitions: int, alpha: int | float, datase
         return batch
 
     partition_train_test = partition_train_test.with_transform(apply_transforms)
-    trainloader = DataLoader(partition_train_test["train"], batch_size=32, shuffle=True)
-    testloader = DataLoader(partition_train_test["test"], batch_size=32)
+    trainloader = DataLoader(partition_train_test["train"], batch_size=batch_size, shuffle=True)
+    testloader = DataLoader(partition_train_test["test"], batch_size=batch_size)
     return trainloader, testloader
 
 

@@ -46,6 +46,7 @@ model = "Net"
 dataset = "CIFAR-10"
 fraction-fit = 0.2
 alpha=100
+batch-size = 32
 number=1
 save-online = false
 save-local = true

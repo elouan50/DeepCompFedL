@@ -111,7 +111,8 @@ def client_fn(context: Context):
     num_partitions = context.node_config["num-partitions"]
     dataset = context.run_config["dataset"]
     alpha = context.run_config["alpha"]
-    trainloader, valloader = load_data(partition_id, num_partitions, alpha, dataset)
+    batch_size = context.run_config["batch-size"]
+    trainloader, valloader = load_data(partition_id, num_partitions, alpha, dataset, batch_size)
     local_epochs = context.run_config["client-epochs"]
     enable_pruning = context.run_config["client-enable-pruning"]
     pruning_rate = context.run_config["pruning-rate"]

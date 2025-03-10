@@ -34,6 +34,7 @@ def server_fn(context: Context):
     save_online = context.run_config["save-online"]
     save_local = context.run_config["save-local"]
     alpha = context.run_config["alpha"]
+    batch_size = context.run_config["batch-size"]
 
     # Initialize model parameters
     if model_name == "Net":
@@ -65,6 +66,7 @@ def server_fn(context: Context):
             num_rounds=num_rounds,
             dataset=dataset,
             alpha=alpha,
+            batch_size=batch_size,
             model=model_name,
             epochs=client_epochs,
             enable_pruning=enable_pruning,

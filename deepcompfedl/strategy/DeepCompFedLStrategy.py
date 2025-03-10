@@ -130,6 +130,7 @@ class DeepCompFedLStrategy(FedAvg):
         num_rounds: int = 3,
         dataset: str = "",
         alpha: int | bool = 100,
+        batch_size: int = 32,
         model: str = "",
         epochs: int = 1,
         enable_pruning: bool = False,
@@ -176,7 +177,7 @@ class DeepCompFedLStrategy(FedAvg):
         self.layer_quantization = layer_quantization
         self.init_space_quantization = init_space_quantization
         
-        self.id = f"p{pruning_rate}-q{bits_quantization}-e{epochs}-n{number}"
+        self.id = f"p{pruning_rate}-q{bits_quantization}-e{epochs}-n{number}-bs{batch_size}"
         
         if save_online:
             wandb.init(
@@ -192,6 +193,7 @@ class DeepCompFedLStrategy(FedAvg):
                     "fraction-fit": fraction_fit,
                     "pruning-rate": pruning_rate,
                     "bits-quantization": bits_quantization,
+                    "batch-size": batch_size,
                 },
             )
 
@@ -254,7 +256,7 @@ class DeepCompFedLStrategy(FedAvg):
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
         if server_round == self.num_rounds and self.save_local:
-            save_dir = f"deepcompfedl/saves/{self.model.lower()}-r{self.num_rounds}"
+            save_dir = f"deepcompfedl/saves/{self.model.lower()}-r{self.num_rounds}-bs8"
 
             os.makedirs(save_dir, exist_ok=True)
             
