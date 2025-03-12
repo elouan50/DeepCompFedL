@@ -23,7 +23,7 @@ sudo apt install python3-tk
 <i>Note: use of such in-built interface is not recommanded, but I did it here for simplicity reasons. It would be better to build an API and a front-end application.</i>
 
 
-In the adapted strategy file `./deepcompfedl/strategy/DeepCompFedLStrategy.py`, in the `__init__()`, `aggregate_fit()` and `aggregate_evaluate()` methods you'll find `wandb` calls. It is very useful for reporting purposes: in a very friendly user-interface, you can monitor metrics of the experiments running in real-time. If you don't want to use it, just comment the relative lines. The first time you use `wandb`, you'll need to connect your account to your machine. I recommand to follow the documentation on the application own website.
+In the adapted strategy file `./deepcompfedl/strategy/DeepCompFedLStrategy.py`, in the `__init__()`, `aggregate_fit()` and `aggregate_evaluate()` methods you'll find `wandb` calls. It is very useful for reporting online the results of the experiments you in a very user-friendly interface. If you want to use it, set the option save-online to true in the `pyproject.toml`. If you do so, you'll eventually need to connect your `wandb` account. I recommand to follow the documentation on the application own website.
 
 ## Run the project
 
@@ -43,7 +43,7 @@ In the `DeepCompFedL` directory, use `flwr run` to run a local simulation:
 flwr run .
 ```
 
-Arguments can be modified in the `pyproject.toml` file.
+Arguments can be modified in the `pyproject.toml` file, or passed manually within the command (see `sh` files for examples).
 
 Additionally, run `flwr run --help` for more informations.
 

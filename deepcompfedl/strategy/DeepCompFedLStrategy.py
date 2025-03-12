@@ -6,6 +6,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import wandb
 import torch
 import os
+import time
 
 from flwr.common import (
     EvaluateRes,
@@ -31,6 +32,8 @@ from deepcompfedl.compression.quantization import quantize
 from deepcompfedl.task import set_weights
 from deepcompfedl.models.resnet18 import ResNet18
 from deepcompfedl.models.resnet12 import ResNet12
+from deepcompfedl.models.qresnet12 import QResNet12
+from deepcompfedl.models.qresnet18 import QResNet18
 
 WARNING_MIN_AVAILABLE_CLIENTS_TOO_LOW = """
 Setting `min_available_clients` lower than `min_fit_clients` or
@@ -128,6 +131,7 @@ class DeepCompFedLStrategy(FedAvg):
         num_rounds: int = 3,
         dataset: str = "",
         alpha: int | bool = 100,
+        batch_size: int = 32,
         model: str = "",
         epochs: int = 1,
         enable_pruning: bool = False,
@@ -173,11 +177,17 @@ class DeepCompFedLStrategy(FedAvg):
         self.bits_quantization = bits_quantization
         self.layer_quantization = layer_quantization
         self.init_space_quantization = init_space_quantization
+        self.begin_round = 0.
+        self.end_configure_fit = 0.
+        self.begin_aggregate_fit = 0.
+        self.end_round = 0.
+        
+        self.id = f"p{pruning_rate}-q{bits_quantization}-e{epochs}-n{number}-bs{batch_size}"
         
         if save_online:
             wandb.init(
-                project="deepcompfedl-quantization",
-                id=f"q{bits_quantization}-i{init_space_quantization}-l{layer_quantization}-e{epochs}-n{number}",
+                project=f"deepcompfedl-{model.lower()}-{dataset.lower()}-r{num_rounds}",
+                id=self.id,
                 config={
                     "aggregation-strategy": "DeepCompFedLStrategy",
                     "num-rounds": num_rounds,
@@ -186,12 +196,9 @@ class DeepCompFedLStrategy(FedAvg):
                     "model": model,
                     "epochs": epochs,
                     "fraction-fit": fraction_fit,
-                    "server-enable-pruning": enable_pruning,
-                    "server-pruning-rate": pruning_rate,
-                    "server-enable-quantization": enable_quantization,
-                    "server-bits-quantization": bits_quantization,
-                    "server-layer-quantization": layer_quantization,
-                    "server-init-space-quantization": init_space_quantization,
+                    "pruning-rate": pruning_rate,
+                    "bits-quantization": bits_quantization,
+                    "batch-size": batch_size,
                 },
             )
 
@@ -199,24 +206,12 @@ class DeepCompFedLStrategy(FedAvg):
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
     ) -> List[Tuple[ClientProxy, FitIns]]:
         """Configure the next round of training."""
+        self.begin_round = time.perf_counter()
+        
         config = {}
         if self.on_fit_config_fn is not None:
             # Custom fit config function provided
             config = self.on_fit_config_fn(server_round)
-        
-        # Prune the parameters sent to client
-        if self.enable_pruning:
-            ndarrays = parameters_to_ndarrays(parameters)
-            ndarrays = prune(ndarrays, self.pruning_rate)
-            parameters = ndarrays_to_parameters(ndarrays)
-        
-        if self.enable_quantization:
-            ndarrays = parameters_to_ndarrays(parameters)
-            ndarrays = quantize(ndarrays,
-                                self.bits_quantization,
-                                self.layer_quantization,
-                                self.init_space_quantization)
-            parameters = ndarrays_to_parameters(ndarrays)
         
         fit_ins = FitIns(parameters, config)
 
@@ -228,6 +223,8 @@ class DeepCompFedLStrategy(FedAvg):
             num_clients=sample_size, min_num_clients=min_num_clients
         )
 
+        self.end_configure_fit = time.perf_counter()
+        
         # Return client/config pairs
         return [(client, fit_ins) for client in clients]
 
@@ -238,6 +235,9 @@ class DeepCompFedLStrategy(FedAvg):
         failures: List[Union[Tuple[ClientProxy, FitRes], BaseException]],
     ) -> Tuple[Optional[Parameters], Dict[str, Scalar]]:
         """Aggregate fit results using weighted average."""
+        
+        self.begin_aggregate_fit = time.perf_counter()
+        
         if not results:
             return None, {}
         # Do not aggregate if there are failures and failures are not accepted
@@ -254,22 +254,43 @@ class DeepCompFedLStrategy(FedAvg):
                 for _, fit_res in results
             ]
             aggregated_ndarrays = aggregate(weights_results)
+        
+        # Prune the parameters sent to client
+        if self.enable_pruning:
+            aggregated_ndarrays = prune(aggregated_ndarrays, self.pruning_rate)
+        
+        if self.enable_quantization and self.model[0] != "Q":
+            aggregated_ndarrays = quantize(aggregated_ndarrays,
+                                            self.bits_quantization,
+                                            self.layer_quantization,
+                                            self.init_space_quantization)
 
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
+        self.end_round = time.perf_counter()
+        
+        # Save the model if it's the last round
         if server_round == self.num_rounds and self.save_local:
-            save_dir = "deepcompfedl/saves/exp2quant"
+            save_dir = f"deepcompfedl/saves/{self.model.lower()}-r{self.num_rounds}-bs8"
 
             os.makedirs(save_dir, exist_ok=True)
             
             if self.model == "ResNet18":
                 model = ResNet18()
                 set_weights(model, aggregated_ndarrays)
-                torch.save(model, f"{save_dir}/q{self.bits_quantization}-i{self.init_space_quantization}-l{self.layer_quantization}-e{self.epochs}-n{self.number}.ptmodel")
+                torch.save(model, f"{save_dir}/{self.id}.ptmodel")
             elif self.model == "ResNet12":
                 model = ResNet12()
                 set_weights(model, aggregated_ndarrays)
-                torch.save(model, f"{save_dir}/q{self.bits_quantization}-i{self.init_space_quantization}-l{self.layer_quantization}-e{self.epochs}-n{self.number}.ptmodel")
+                torch.save(model, f"{save_dir}/{self.id}.ptmodel")
+            elif self.model == "QResNet12":
+                model = QResNet12(self.bits_quantization)
+                set_weights(model, aggregated_ndarrays)
+                torch.save(model.state_dict(), f"{save_dir}/{self.id}.ptmodel")
+            elif self.model == "QResNet18":
+                model = QResNet18(self.bits_quantization)
+                set_weights(model, aggregated_ndarrays)
+                torch.save(model.state_dict(), f"{save_dir}/{self.id}.ptmodel")
             else:
                 log(WARNING, "Model couldn't be saved")
 
@@ -278,8 +299,19 @@ class DeepCompFedLStrategy(FedAvg):
         if self.fit_metrics_aggregation_fn:
             fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
+            
+            round_time = self.end_round - self.begin_round
+            configure_fit_time = self.end_configure_fit - self.begin_round
+            aggregate_fit_time = self.end_round - self.begin_aggregate_fit
+            
+            overhead = (round_time - (configure_fit_time + aggregate_fit_time + metrics_aggregated["training-time"] + metrics_aggregated["compression-time"])) / round_time
+            metrics_aggregated["round-time"] = round_time
+            metrics_aggregated["communication-overhead"] = overhead
+            
+            # Save the metrics online
             if self.save_online:
                 wandb.log(metrics_aggregated, step=server_round)
+
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No fit_metrics_aggregation_fn provided")
 
