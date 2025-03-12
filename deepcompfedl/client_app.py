@@ -60,6 +60,7 @@ class FlowerClient(NumPyClient):
 
     def fit(self, parameters, config):
         begin = time.perf_counter()
+        
         set_weights(self.net, parameters)
         train_loss = train(
             self.net,
@@ -67,6 +68,9 @@ class FlowerClient(NumPyClient):
             self.local_epochs,
             self.device,
         )
+        
+        after_training = time.perf_counter()
+        train_time = after_training - begin
         
         ### Apply Pruning
         if self.enable_pruning:
@@ -88,9 +92,8 @@ class FlowerClient(NumPyClient):
             # if self.partition_id == 0:
             #     print(f"Effective sent quantization (for client {self.partition_id}):")
             #     quantized(self.net)
-        end = time.perf_counter()
         
-        return get_weights(self.net), len(self.trainloader.dataset), {"train_loss": train_loss, "training-time": float((end - begin)*1000)}
+        return get_weights(self.net), len(self.trainloader.dataset), {"train-loss": train_loss, "training-time": train_time, "compression-time": time.perf_counter() - after_training}
 
     def evaluate(self, parameters, config):
         set_weights(self.net, parameters)

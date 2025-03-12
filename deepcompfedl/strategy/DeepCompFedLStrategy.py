@@ -6,6 +6,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import wandb
 import torch
 import os
+import time
 
 from flwr.common import (
     EvaluateRes,
@@ -176,6 +177,10 @@ class DeepCompFedLStrategy(FedAvg):
         self.bits_quantization = bits_quantization
         self.layer_quantization = layer_quantization
         self.init_space_quantization = init_space_quantization
+        self.begin_round = 0.
+        self.end_configure_fit = 0.
+        self.begin_aggregate_fit = 0.
+        self.end_round = 0.
         
         self.id = f"p{pruning_rate}-q{bits_quantization}-e{epochs}-n{number}-bs{batch_size}"
         
@@ -201,6 +206,8 @@ class DeepCompFedLStrategy(FedAvg):
         self, server_round: int, parameters: Parameters, client_manager: ClientManager
     ) -> List[Tuple[ClientProxy, FitIns]]:
         """Configure the next round of training."""
+        self.begin_round = time.perf_counter()
+        
         config = {}
         if self.on_fit_config_fn is not None:
             # Custom fit config function provided
@@ -216,6 +223,8 @@ class DeepCompFedLStrategy(FedAvg):
             num_clients=sample_size, min_num_clients=min_num_clients
         )
 
+        self.end_configure_fit = time.perf_counter()
+        
         # Return client/config pairs
         return [(client, fit_ins) for client in clients]
 
@@ -226,6 +235,9 @@ class DeepCompFedLStrategy(FedAvg):
         failures: List[Union[Tuple[ClientProxy, FitRes], BaseException]],
     ) -> Tuple[Optional[Parameters], Dict[str, Scalar]]:
         """Aggregate fit results using weighted average."""
+        
+        self.begin_aggregate_fit = time.perf_counter()
+        
         if not results:
             return None, {}
         # Do not aggregate if there are failures and failures are not accepted
@@ -255,6 +267,9 @@ class DeepCompFedLStrategy(FedAvg):
 
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
+        self.end_round = time.perf_counter()
+        
+        # Save the model if it's the last round
         if server_round == self.num_rounds and self.save_local:
             save_dir = f"deepcompfedl/saves/{self.model.lower()}-r{self.num_rounds}-bs8"
 
@@ -284,8 +299,19 @@ class DeepCompFedLStrategy(FedAvg):
         if self.fit_metrics_aggregation_fn:
             fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
+            
+            round_time = self.end_round - self.begin_round
+            configure_fit_time = self.end_configure_fit - self.begin_round
+            aggregate_fit_time = self.end_round - self.begin_aggregate_fit
+            
+            overhead = (round_time - (configure_fit_time + aggregate_fit_time + metrics_aggregated["training-time"] + metrics_aggregated["compression-time"])) / round_time
+            metrics_aggregated["round-time"] = round_time
+            metrics_aggregated["communication-overhead"] = overhead
+            
+            # Save the metrics online
             if self.save_online:
                 wandb.log(metrics_aggregated, step=server_round)
+
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No fit_metrics_aggregation_fn provided")
 

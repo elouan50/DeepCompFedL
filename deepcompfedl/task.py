@@ -78,7 +78,7 @@ def train(net, trainloader, epochs, device):
     """Train the model on the training set."""
     net.to(device)  # move model to GPU if available
     criterion = torch.nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.SGD(net.parameters(), lr=0.1, momentum=0.9)
+    optimizer = torch.optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
     net.train()
     running_loss = 0.0
     for _ in range(epochs):
@@ -131,6 +131,19 @@ def evaluate_metrics_aggregation_fn(eval_metrics):
 
 def fit_metrics_aggregation_fn(fit_metrics):
     num_total_fit_examples = sum(num_examples for (num_examples, _) in fit_metrics)
-    weighted_accuracies = [num_examples * metrics["training-time"] for num_examples, metrics in fit_metrics]
-    metrics_aggregated = sum(weighted_accuracies) / num_total_fit_examples
-    return {"training-time": float(metrics_aggregated)}
+    
+    # We weight all metrics by the number of examples
+    
+    # Training loss
+    weighted_train_losses = [num_examples * metrics["train-loss"] for num_examples, metrics in fit_metrics]
+    train_losses_aggregated = sum(weighted_train_losses) / num_total_fit_examples
+    
+    # Training time
+    weighted_training_times = [num_examples * metrics["training-time"] for num_examples, metrics in fit_metrics]
+    training_times_aggregated = sum(weighted_training_times) / num_total_fit_examples
+    
+    # Compression time
+    weighted_compression_times = [num_examples * metrics["compression-time"] for num_examples, metrics in fit_metrics]
+    compression_times_aggregated = sum(weighted_compression_times) / num_total_fit_examples
+    
+    return {"training-time": float(training_times_aggregated), "train-loss": float(train_losses_aggregated), "compression-time": float(compression_times_aggregated)}
