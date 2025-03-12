@@ -6,11 +6,11 @@ for number in 1 2 3
 do
     for qbits in 32 8 4
     do
-        for batch in 8
+        for batch in 8 32
         do
             echo "Experiment with quantization on $qbits bits and batch size $batch."
             flwr run --run-config "
-                                server-rounds=1000
+                                server-rounds=300
                                 client-enable-quantization=true
                                 bits-quantization=$qbits
                                 model='ResNet18'
