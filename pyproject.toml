@@ -17,6 +17,7 @@ dependencies = [
     "pympler>=1.1",
     "wandb>=0.19.6",
     "cuml-cu11==25.2.*",
+    "brevitas==0.11.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -32,24 +33,23 @@ clientapp = "deepcompfedl.client_app:app"
 [tool.flwr.app.config]
 server-rounds = 3
 server-enable-pruning = false
-server-pruning-rate = 0.25
 server-enable-quantization = false
-server-bits-quantization = 32
 aggregation-strategy = "FedAvg"
 client-epochs = 1
 client-enable-pruning = false
-client-pruning-rate = 0.25
 client-enable-quantization = false
-client-bits-quantization = 32
+pruning-rate = 0.0
+bits-quantization = 32
 layer-quantization = true
 init-space-quantization = "uniform"
 model = "Net"
 dataset = "CIFAR-10"
 fraction-fit = 0.2
 alpha=100
+batch-size = 32
 number=1
 save-online = false
-save-local = false
+save-local = true
 
 [tool.flwr.federations]
 default = "local-simulation"

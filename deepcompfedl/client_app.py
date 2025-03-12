@@ -24,12 +24,14 @@ from deepcompfedl.task import (
 from deepcompfedl.models.net import Net
 from deepcompfedl.models.resnet12 import ResNet12
 from deepcompfedl.models.resnet18 import ResNet18
-from torchvision.models import resnet18
+from deepcompfedl.models.qresnet12 import QResNet12
+from deepcompfedl.models.qresnet18 import QResNet18
 
 # Define Flower Client and client_fn
 class FlowerClient(NumPyClient):
     def __init__(self,
                  net,
+                 model_name,
                  trainloader,
                  valloader,
                  local_epochs,
@@ -42,6 +44,7 @@ class FlowerClient(NumPyClient):
                  init_space_quantization
                  ): 
         self.net = net
+        self.model_name = model_name
         self.trainloader = trainloader
         self.valloader = valloader
         self.local_epochs = local_epochs
@@ -57,6 +60,7 @@ class FlowerClient(NumPyClient):
 
     def fit(self, parameters, config):
         begin = time.perf_counter()
+        
         set_weights(self.net, parameters)
         train_loss = train(
             self.net,
@@ -64,6 +68,9 @@ class FlowerClient(NumPyClient):
             self.local_epochs,
             self.device,
         )
+        
+        after_training = time.perf_counter()
+        train_time = after_training - begin
         
         ### Apply Pruning
         if self.enable_pruning:
@@ -75,7 +82,7 @@ class FlowerClient(NumPyClient):
                 pruned_weights(self.net)
         
         ### Apply Quantization
-        if self.enable_quantization:
+        if self.enable_quantization and self.model_name[0] != "Q":
             params = get_weights(self.net)
             quantize(params,
                      self.bits_quantization,
@@ -85,9 +92,8 @@ class FlowerClient(NumPyClient):
             # if self.partition_id == 0:
             #     print(f"Effective sent quantization (for client {self.partition_id}):")
             #     quantized(self.net)
-        end = time.perf_counter()
         
-        return get_weights(self.net), len(self.trainloader.dataset), {"train_loss": train_loss, "training-time": float((end - begin)*1000)}
+        return get_weights(self.net), len(self.trainloader.dataset), {"train-loss": train_loss, "training-time": train_time, "compression-time": time.perf_counter() - after_training}
 
     def evaluate(self, parameters, config):
         set_weights(self.net, parameters)
@@ -108,12 +114,13 @@ def client_fn(context: Context):
     num_partitions = context.node_config["num-partitions"]
     dataset = context.run_config["dataset"]
     alpha = context.run_config["alpha"]
-    trainloader, valloader = load_data(partition_id, num_partitions, alpha, dataset)
+    batch_size = context.run_config["batch-size"]
+    trainloader, valloader = load_data(partition_id, num_partitions, alpha, dataset, batch_size)
     local_epochs = context.run_config["client-epochs"]
     enable_pruning = context.run_config["client-enable-pruning"]
-    pruning_rate = context.run_config["client-pruning-rate"]
+    pruning_rate = context.run_config["pruning-rate"]
     enable_quantization = context.run_config["client-enable-quantization"]
-    bits_quantization = context.run_config["client-bits-quantization"]
+    bits_quantization = context.run_config["bits-quantization"]
     model_name = context.run_config["model"]
     layer_quantization = context.run_config["layer-quantization"]
     init_space_quantization = context.run_config["init-space-quantization"]
@@ -124,11 +131,15 @@ def client_fn(context: Context):
         net = ResNet12()
     elif model_name == "ResNet18":
         net = ResNet18()
-        # net = resnet18(num_classes=10)
+    elif model_name == "QResNet12":
+        net = QResNet12(bits_quantization)
+    elif model_name == "QResNet18":
+        net = QResNet18(bits_quantization)
     else:
         log(WARNING, "No existing model provided")
     
     client = FlowerClient(net,
+                          model_name,
                           trainloader,
                           valloader,
                           local_epochs,
