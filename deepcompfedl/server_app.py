@@ -35,6 +35,7 @@ def server_fn(context: Context):
     save_local = context.run_config["save-local"]
     alpha = context.run_config["alpha"]
     batch_size = context.run_config["batch-size"]
+    learning_rate = context.run_config["learning-rate"]
 
     # Initialize model parameters
     if model_name == "Net":
@@ -67,6 +68,7 @@ def server_fn(context: Context):
             dataset=dataset,
             alpha=alpha,
             batch_size=batch_size,
+            learning_rate=learning_rate,
             model=model_name,
             epochs=client_epochs,
             enable_pruning=enable_pruning,

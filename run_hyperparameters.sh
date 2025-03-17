@@ -30,6 +30,8 @@ do
                                         bits-quantization=$qbits
                                         model='ResNet12'
                                         fraction-fit=0.4
+                                        batch-size=$bs
+                                        learning-rate=$lr
                                         aggregation-strategy='DeepCompFedLStrategy'
                                         client-epochs=$epochs
                                         number=$number

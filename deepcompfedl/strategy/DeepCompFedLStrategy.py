@@ -187,7 +187,7 @@ class DeepCompFedLStrategy(FedAvg):
         
         if save_online:
             wandb.init(
-                project=f"deepcompfedl-{model.lower()}-{dataset.lower()}-r{num_rounds}",
+                project=f"deepcompfedl-hyperparameters",
                 name=self.id,
                 config={
                     "aggregation-strategy": "DeepCompFedLStrategy",
@@ -200,7 +200,7 @@ class DeepCompFedLStrategy(FedAvg):
                     "pruning-rate": pruning_rate,
                     "bits-quantization": bits_quantization,
                     "batch-size": batch_size,
-                    "learning_rate": learning_rate,
+                    "learning-rate": learning_rate,
                 },
             )
 
