@@ -132,6 +132,7 @@ class DeepCompFedLStrategy(FedAvg):
         dataset: str = "",
         alpha: int | bool = 100,
         batch_size: int = 32,
+        learning_rate: float = 0.01,
         model: str = "",
         epochs: int = 1,
         enable_pruning: bool = False,
@@ -182,12 +183,12 @@ class DeepCompFedLStrategy(FedAvg):
         self.begin_aggregate_fit = 0.
         self.end_round = 0.
         
-        self.id = f"p{pruning_rate}-q{bits_quantization}-e{epochs}-n{number}-bs{batch_size}"
+        self.id = f"p{pruning_rate}-q{bits_quantization}-e{epochs}-n{number}"
         
         if save_online:
             wandb.init(
                 project=f"deepcompfedl-{model.lower()}-{dataset.lower()}-r{num_rounds}",
-                id=self.id,
+                name=self.id,
                 config={
                     "aggregation-strategy": "DeepCompFedLStrategy",
                     "num-rounds": num_rounds,
@@ -199,6 +200,7 @@ class DeepCompFedLStrategy(FedAvg):
                     "pruning-rate": pruning_rate,
                     "bits-quantization": bits_quantization,
                     "batch-size": batch_size,
+                    "learning_rate": learning_rate,
                 },
             )
 

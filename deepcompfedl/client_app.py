@@ -34,6 +34,7 @@ class FlowerClient(NumPyClient):
                  model_name,
                  trainloader,
                  valloader,
+                 learning_rate,
                  local_epochs,
                  enable_pruning,
                  pruning_rate,
@@ -47,6 +48,7 @@ class FlowerClient(NumPyClient):
         self.model_name = model_name
         self.trainloader = trainloader
         self.valloader = valloader
+        self.learning_rate = learning_rate
         self.local_epochs = local_epochs
         self.enable_pruning = enable_pruning
         self.pruning_rate = pruning_rate
@@ -65,6 +67,7 @@ class FlowerClient(NumPyClient):
         train_loss = train(
             self.net,
             self.trainloader,
+            self.learning_rate,
             self.local_epochs,
             self.device,
         )
@@ -116,6 +119,7 @@ def client_fn(context: Context):
     alpha = context.run_config["alpha"]
     batch_size = context.run_config["batch-size"]
     trainloader, valloader = load_data(partition_id, num_partitions, alpha, dataset, batch_size)
+    learning_rate = context.run_config["learning-rate"]
     local_epochs = context.run_config["client-epochs"]
     enable_pruning = context.run_config["client-enable-pruning"]
     pruning_rate = context.run_config["pruning-rate"]
@@ -142,6 +146,7 @@ def client_fn(context: Context):
                           model_name,
                           trainloader,
                           valloader,
+                          learning_rate,
                           local_epochs,
                           enable_pruning,
                           pruning_rate,
