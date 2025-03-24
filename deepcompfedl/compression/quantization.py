@@ -30,18 +30,10 @@ def quantize(params: NDArrays,
     Returns:
         NDArrays: Parameters of the quantized model.
     """
-    output = []
     
     if layer_scale: # Layer-wise quantization
-        for layer in params:
-            # Flatten the matrix
-            shape = np.shape(layer)            
-            flattened = layer.reshape(-1,1)
-            
-            # Applying K-Means clustering
-            flattened = apply_kmeans(flattened, nbits, init_space)
-                
-            output.append(flattened.reshape(shape))
+        for i, layer in enumerate(params):
+            quantize_layer(params, i, layer, nbits, init_space)
         
     else: # Global scale
         shape = []
@@ -57,9 +49,20 @@ def quantize(params: NDArrays,
 
         flattened = np.split(flattened.reshape(-1,1), np.cumsum([np.prod(s) for s in shape])[:-1])
         for i in range(len(shape)):
-            output.append(flattened[i].reshape(shape[i]))
+            params[i] = flattened[i].reshape(shape[i])
         
-    return output
+    return params
+
+def quantize_layer(params, i, layer, nbits, init_space):
+    # Flatten the matrix
+    shape = np.shape(layer)            
+    flattened = layer.reshape(-1,1)
+    
+    # Applying K-Means clustering
+    flattened = apply_kmeans(flattened, nbits, init_space)
+        
+    params[i] = flattened.reshape(shape)
+    
 
 def apply_kmeans(flat, nbits, init_space):
     """

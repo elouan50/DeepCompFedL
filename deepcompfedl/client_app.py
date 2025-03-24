@@ -79,14 +79,14 @@ class FlowerClient(NumPyClient):
         
         ### Apply Pruning
         if self.enable_pruning:
-            parameters = prune(params, self.pruning_rate)
+            params = prune(params, self.pruning_rate)
         
         ### Apply Quantization
         if self.enable_quantization and self.model_name[0] != "Q":
-            quantize(params,
-                     self.bits_quantization,
-                     self.layer_quantization,
-                     self.init_space_quantization)
+            params = quantize(params,
+                            self.bits_quantization,
+                            self.layer_quantization,
+                            self.init_space_quantization)
         
         return params, len(self.trainloader.dataset), {"train-loss": train_loss, "training-time": train_time, "compression-time": time.perf_counter() - after_training}
 
