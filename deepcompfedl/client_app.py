@@ -1,14 +1,17 @@
 """DeepCompFedL: A Flower / PyTorch app."""
 
 import time
+import os
+import shutil
 import torch
 from logging import WARNING
 from flwr.client import NumPyClient, ClientApp
 from flwr.common import Context
 from flwr.common.logger import log
 
-from deepcompfedl.compression.pruning import prune
-from deepcompfedl.compression.quantization import quantize
+from deepcompfedl.compression.pruning import prune, prune_layer
+from deepcompfedl.compression.quantization import quantize, quantize_layer
+from deepcompfedl.compression.encoding import huffman_encode, huffman_encode_model
 from deepcompfedl.compression.metrics import (
     pruned_weights,
     quantized,
@@ -27,6 +30,12 @@ from deepcompfedl.models.resnet18 import ResNet18
 from deepcompfedl.models.qresnet12 import QResNet12
 from deepcompfedl.models.qresnet18 import QResNet18
 
+import numpy as np
+import cupy as cp
+from cupyx.scipy.sparse import csc_matrix as csc_gpu
+from cuml.cluster import KMeans
+from scipy.sparse import csc_matrix, csr_matrix
+
 # Define Flower Client and client_fn
 class FlowerClient(NumPyClient):
     def __init__(self,
@@ -41,8 +50,9 @@ class FlowerClient(NumPyClient):
                  enable_quantization,
                  bits_quantization,
                  partition_id,
-                 layer_quantization,
-                 init_space_quantization
+                 layer_compression,
+                 init_space_quantization,
+                 full_compression,
                  ): 
         self.net = net
         self.model_name = model_name
@@ -55,8 +65,9 @@ class FlowerClient(NumPyClient):
         self.enable_quantization = enable_quantization
         self.bits_quantization = bits_quantization
         self.partition_id = partition_id
-        self.layer_quantization = layer_quantization
+        self.layer_compression = layer_compression
         self.init_space_quantization = init_space_quantization
+        self.full_compression = full_compression
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.net.to(self.device)
 
@@ -72,23 +83,79 @@ class FlowerClient(NumPyClient):
             self.device,
         )
         
-        params = get_weights(self.net)
-        
         after_training = time.perf_counter()
         train_time = after_training - begin
         
-        ### Apply Pruning
-        if self.enable_pruning:
-            params = prune(params, self.pruning_rate)
-        
-        ### Apply Quantization
-        if self.enable_quantization and self.model_name[0] != "Q":
-            params = quantize(params,
-                            self.bits_quantization,
-                            self.layer_quantization,
-                            self.init_space_quantization)
-        
-        return params, len(self.trainloader.dataset), {"train-loss": train_loss, "training-time": train_time, "compression-time": time.perf_counter() - after_training}
+        if self.full_compression:
+            diff=[]
+            centroids=[]
+            indices=[]
+            
+            if os.path.exists(f'deepcompfedl/encodings/cl{self.partition_id}'):
+                shutil.rmtree(f'deepcompfedl/encodings/cl{self.partition_id}')
+            os.makedirs(f'deepcompfedl/encodings/cl{self.partition_id}', exist_ok=True)
+            
+            for name, param in self.net.named_parameters():
+                ### Apply Pruning
+                if  0 < self.pruning_rate < 1:
+                    sorted = torch.cat([param.flatten().abs()]).sort()[0]
+                    threshold = sorted[int(len(sorted) * self.pruning_rate)].item()
+                    param.data[param.abs() <= threshold] = 0
+                
+                ### Apply Quantization
+                form = 'csc'
+                compressed = csc_gpu(cp.array(param.data.reshape(-1,1)))
+                
+                if self.bits_quantization < 32 and compressed.getnnz() > 2**self.bits_quantization:
+                    min_, max_ = compressed.min(), compressed.max()
+                    if min_ != max_:
+                        space = np.linspace(min_, max_, num=2**self.bits_quantization)
+                        kmeans = KMeans(n_clusters=len(space), init=space.reshape(-1,1), n_init=1)
+                        kmeans.fit(compressed.data.reshape(-1,1))
+                        new_weight = kmeans.cluster_centers_[kmeans.labels_].reshape(-1)
+                        compressed.data = new_weight
+                        param.data = torch.as_tensor(compressed.toarray()).reshape(param.data.shape)
+
+                if compressed.data.size > 0:
+                    ### Huffman encode
+                    if 'weight' in name or 'bias' in name:
+                        # For index difference
+                        t0, d0 = huffman_encode(compressed.data.get(), name+f'_{form}_data', f'deepcompfedl/encodings/cl{self.partition_id}')
+                        # For centroids
+                        t1, d1 = huffman_encode(compressed.indices.get(), name+f'_{form}_indices', f'deepcompfedl/encodings/cl{self.partition_id}')
+                        # For indices
+                    else:
+                        log(WARNING, "Parameter not recognized")
+                                
+            return [self.partition_id], len(self.trainloader.dataset), {"train-loss": train_loss, "training-time": train_time, "compression-time": time.perf_counter() - after_training}
+                
+        else:
+            params = get_weights(self.net)
+            if self.layer_compression:
+                for i, layer in enumerate(params):
+                    ### Apply Pruning
+                    if self.enable_pruning:
+                        sorted = torch.cat([torch.from_numpy(layer).flatten().abs()]).sort()[0]
+                        threshold = sorted[int(len(sorted) * self.pruning_rate)].item()
+                        prune_layer(params, i, threshold)
+                    
+                    ### Apply Quantization
+                    if self.enable_quantization:
+                        quantize_layer(params, i, self.bits_quantization, self.init_space_quantization)
+            
+            else:
+                ### Apply Pruning
+                if self.enable_pruning:
+                    params = prune(params, self.pruning_rate)
+                
+                ### Apply Quantization
+                if self.enable_quantization and self.model_name[0] != "Q":
+                    params = quantize(params,
+                                    self.bits_quantization,
+                                    self.layer_compression,
+                                    self.init_space_quantization)
+            
+            return params, len(self.trainloader.dataset), {"train-loss": train_loss, "training-time": train_time, "compression-time": time.perf_counter() - after_training}
 
     def evaluate(self, parameters, config):
         set_weights(self.net, parameters)
@@ -117,8 +184,9 @@ def client_fn(context: Context):
     pruning_rate = context.run_config["pruning-rate"]
     enable_quantization = context.run_config["client-enable-quantization"]
     bits_quantization = context.run_config["bits-quantization"]
+    full_compression = context.run_config["full-compression"]
     model_name = context.run_config["model"]
-    layer_quantization = context.run_config["layer-quantization"]
+    layer_compression = context.run_config["layer-compression"]
     init_space_quantization = context.run_config["init-space-quantization"]
     
     if model_name == "Net":
@@ -145,8 +213,9 @@ def client_fn(context: Context):
                           enable_quantization,
                           bits_quantization,
                           partition_id,
-                          layer_quantization,
-                          init_space_quantization)
+                          layer_compression,
+                          init_space_quantization,
+                          full_compression)
 
     
     return client.to_client()

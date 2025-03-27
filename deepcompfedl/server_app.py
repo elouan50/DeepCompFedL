@@ -28,8 +28,9 @@ def server_fn(context: Context):
     enable_quantization = context.run_config["server-enable-quantization"]
     pruning_rate = context.run_config["pruning-rate"]
     bits_quantization = context.run_config["bits-quantization"]
-    layer_quantization = context.run_config["layer-quantization"]
+    layer_compression = context.run_config["layer-compression"]
     init_space_quantization = context.run_config["init-space-quantization"]
+    full_compression = context.run_config["full-compression"]
     number = context.run_config["number"]
     save_online = context.run_config["save-online"]
     save_local = context.run_config["save-local"]
@@ -75,8 +76,9 @@ def server_fn(context: Context):
             pruning_rate=pruning_rate,
             enable_quantization=enable_quantization,
             bits_quantization=bits_quantization,
-            layer_quantization=layer_quantization,
+            layer_compression=layer_compression,
             init_space_quantization=init_space_quantization,
+            full_compression=full_compression,
             number=number,
             save_online=save_online,
             save_local=save_local,
