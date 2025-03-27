@@ -15,7 +15,7 @@ from flwr.common import NDArrays
 
 def quantize(params: NDArrays,
              nbits: int = 8,
-             layer_scale: bool = True,
+             layer_wise: bool = True,
              init_space: str = "uniform"
              ) -> NDArrays:
     """
@@ -24,16 +24,16 @@ def quantize(params: NDArrays,
     Args:
         params (NDArrays): Parameters of the model.
         nbits (int, optional): Number of bits for cluster representation. Defaults to 8.
-        layer_scale (bool, optional): If the quantization is applied to layers spearately (True) or all weights at the same time (False). Defaults to True.
+        layer_wise (bool, optional): If the quantization is applied to layers spearately (True) or all weights at the same time (False). Defaults to True.
         init_space (str, optional): The initialization space for the K-Means clustering. Defaults to "uniform". Can take values "uniform" or "random" or "density".
 
     Returns:
         NDArrays: Parameters of the quantized model.
     """
     
-    if layer_scale: # Layer-wise quantization
-        for i, layer in enumerate(params):
-            quantize_layer(params, i, layer, nbits, init_space)
+    if layer_wise: # Layer-wise quantization
+        for i in range(len(params)):
+            quantize_layer(params, i, nbits, init_space)
         
     else: # Global scale
         shape = []
@@ -53,8 +53,9 @@ def quantize(params: NDArrays,
         
     return params
 
-def quantize_layer(params, i, layer, nbits, init_space):
+def quantize_layer(params, i, nbits=8, init_space="uniform"):
     # Flatten the matrix
+    layer = params[i]
     shape = np.shape(layer)            
     flattened = layer.reshape(-1,1)
     
@@ -64,12 +65,12 @@ def quantize_layer(params, i, layer, nbits, init_space):
     params[i] = flattened.reshape(shape)
     
 
-def apply_kmeans(flat, nbits, init_space):
+def apply_kmeans(mat, nbits=8, init_space="uniform"):
     """
     Apply K-Means clustering to the flattened matrix.
     
     Args:
-        flat (np.ndarray): Flattened matrix.
+        mat (np.ndarray): Flattened matrix.
         nbits (int): Number of bits for cluster representation.
         init_space (str): The initialization space for the K-Means clustering.
         
@@ -77,7 +78,8 @@ def apply_kmeans(flat, nbits, init_space):
         np.ndarray: The quantized matrix.
     """
     # Using a compressed sparse representation for the flattened matrix
-    mat = csr_matrix(flat)
+    if not isinstance(mat, csr_matrix):
+        mat = csr_matrix(mat)
     
     if mat.getnnz() > 2**nbits:
         min_ = np.min(mat.data)

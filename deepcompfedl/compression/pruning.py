@@ -14,6 +14,7 @@ Functions:
 import numpy as np
 import torch
 
+from scipy.sparse import csr_matrix
 
 def prune(params, pruning_rate : float = 0.1):
     if 0. < pruning_rate < 1.:
@@ -21,9 +22,11 @@ def prune(params, pruning_rate : float = 0.1):
         threshold = sorted[int(len(sorted) * pruning_rate)].item()
         
         for i, p in enumerate(params):
-            prune_layer(params, i, p, threshold)
+            prune_layer(params, i, threshold)
         
     return params
 
-def prune_layer(params, i, layer, threshold):
+def prune_layer(params, i, threshold):
+    layer = params[i]
     params[i][np.abs(layer) <= threshold] = 0
+    return csr_matrix(layer.reshape(-1,1)), np.shape(layer)
