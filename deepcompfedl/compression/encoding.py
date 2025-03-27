@@ -6,7 +6,6 @@ from heapq import heappush, heappop, heapify
 import struct
 from pathlib import Path
 
-import torch
 import numpy as np
 from scipy.sparse import csr_matrix, csc_matrix
 
@@ -24,7 +23,7 @@ def huffman_encode(arr, prefix, save_dir='./', stats=False):
 
     # Calculate frequency in arr
     freq_map = defaultdict(int)
-    convert_map = {'float32':float, 'int32':int}
+    convert_map = {'float32':float, 'int32':int, 'int64':int}
     for value in np.nditer(arr):
         value = convert_map[dtype](value)
         freq_map[value] += 1
@@ -69,38 +68,13 @@ def huffman_encode(arr, prefix, save_dir='./', stats=False):
     return treesize, datasize
 
 
-def huffman_decode(directory, prefix, dtype):
-    """
-    Decodes binary files from directory
-    """
-    directory = Path(directory)
-
-    # Read the codebook
-    codebook_encoding = load(directory/f'{prefix}_codebook.bin')
-    root = decode_huffman_tree(codebook_encoding, dtype)
-
-    # Read the data
-    data_encoding = load(directory/f'{prefix}.bin')
-
-    # Decode
-    data = []
-    ptr = root
-    for bit in data_encoding:
-        ptr = ptr.left if bit == '0' else ptr.right
-        if ptr.value is not None: # Leaf node
-            data.append(ptr.value)
-            ptr = root
-
-    return np.array(data, dtype=dtype)
-
-
 # Logics to encode / decode huffman tree
 # Referenced the idea from https://stackoverflow.com/questions/759707/efficient-way-of-storing-huffman-tree
 def encode_huffman_tree(root, dtype):
     """
     Encodes a huffman tree to string of '0's and '1's
     """
-    converter = {'float32':float2bitstr, 'int32':int2bitstr}
+    converter = {'float32':float2bitstr, 'int32':int2bitstr, 'int64':int2bitstr}
     code_list = []
     def encode_node(node):
         if node.value is not None: # node is leaf node
@@ -113,29 +87,6 @@ def encode_huffman_tree(root, dtype):
             encode_node(node.right)
     encode_node(root)
     return ''.join(code_list)
-
-
-def decode_huffman_tree(code_str, dtype):
-    """
-    Decodes a string of '0's and '1's and costructs a huffman tree
-    """
-    converter = {'float32':bitstr2float, 'int32':bitstr2int}
-    idx = 0
-    def decode_node():
-        nonlocal idx
-        info = code_str[idx]
-        idx += 1
-        if info == '1': # Leaf node
-            value = converter[dtype](code_str[idx:idx+32])
-            idx += 32
-            return Node(0, value, None, None)
-        else:
-            left = decode_node()
-            right = decode_node()
-            return Node(0, None, left, right)
-
-    return decode_node()
-
 
 
 # My own dump / load logics
@@ -163,20 +114,6 @@ def dump(code_str, filename, stats=False):
     return len(byte_arr)
 
 
-def load(filename):
-    """
-    This function reads a file and makes a string of '0's and '1's
-    """
-    with open(filename, 'rb') as f:
-        header = f.read(1)
-        rest = f.read() # bytes
-        code_str = ''.join(f'{byte:08b}' for byte in rest)
-        offset = ord(header)
-        if offset != 0:
-            code_str = code_str[:-offset] # string of '0's and '1's
-    return code_str
-
-
 # Helper functions for converting between bit string and (float or int)
 def float2bitstr(f):
     four_bytes = struct.pack('>f', f) # bytes
@@ -199,8 +136,6 @@ def bitstr2int(bitstr):
 def calc_index_diff(indptr):
     return indptr[1:] - indptr[:-1]
 
-def reconstruct_indptr(diff):
-    return np.concatenate([[0], np.cumsum(diff)])
 
 
 # Encode / Decode models
@@ -217,13 +152,12 @@ def huffman_encode_model(model, directory='encodings/', stats=False):
         if 'weight' in name:
             weight = param.data.cpu().numpy()
             shape = weight.shape
-            form = 'csr'
-            mat = csr_matrix(weight.reshape(-1,1))
+            form = 'csc'
+            mat = csc_matrix(weight.reshape(-1,1))
 
             # Encode
             t0, d0 = huffman_encode(mat.data, name+f'_{form}_data', directory, stats)
             t1, d1 = huffman_encode(mat.indices, name+f'_{form}_indices', directory, stats)
-            t2, d2 = huffman_encode(calc_index_diff(mat.indptr), name+f'_{form}_indptr', directory, stats)
 
             # Print statistics
             original = mat.data.nbytes + mat.indices.nbytes + mat.indptr.nbytes
@@ -249,31 +183,3 @@ def huffman_encode_model(model, directory='encodings/', stats=False):
     if stats:
         print('-'*70)
         print(f"{'total':15} | {original_total:>10} {compressed_total:>10} {original_total / compressed_total:>10.2f}x {100 * compressed_total / original_total:>6.2f}%")
-
-
-def huffman_decode_model(model, directory='encodings/'):
-    for name, param in model.named_parameters():
-        if 'mask' in name:
-            continue
-        if 'weight' in name:
-            dev = param.device
-            weight = param.data.cpu().numpy()
-            shape = weight.shape
-            form = 'csr' if shape[0] < shape[1] else 'csc'
-            matrix = csr_matrix if shape[0] < shape[1] else csc_matrix
-
-            # Decode data
-            data = huffman_decode(directory, name+f'_{form}_data', dtype='float32')
-            indices = huffman_decode(directory, name+f'_{form}_indices', dtype='int32')
-            indptr = reconstruct_indptr(huffman_decode(directory, name+f'_{form}_indptr', dtype='int32'))
-
-            # Construct matrix
-            mat = matrix((data, indices, indptr), shape)
-
-            # Insert to model
-            param.data = torch.from_numpy(mat.toarray()).to(dev)
-        else:
-            dev = param.device
-            bias = np.load(directory+name, allow_pickle=True)
-            param.data = torch.from_numpy(bias).to(dev)
-    return model
