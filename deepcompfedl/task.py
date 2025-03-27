@@ -3,39 +3,10 @@
 from collections import OrderedDict
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torchvision.transforms import Compose, Normalize, ToTensor, RandomCrop, RandomHorizontalFlip
+from torchvision.transforms import Compose, Normalize, ToTensor
 from flwr_datasets import FederatedDataset
 from flwr_datasets.partitioner import IidPartitioner, DirichletPartitioner
-
-
-dict_tranforms = {  
-    "cifar10"           : Compose([
-                                        RandomCrop(32, padding=4),
-                                        RandomHorizontalFlip(),
-                                        ToTensor(),
-                                        Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]),
-    "emnist"            : Compose([
-                                        ToTensor(),
-                                        Normalize((0.1307,), (0.3081,))]), 
-    "cifar100"          : Compose([
-                                        RandomCrop(32, padding=4),
-                                        RandomHorizontalFlip(),
-                                        ToTensor(),
-                                        Normalize((0.5071, 0.4865, 0.4409), (0.2673, 0.2564, 0.2762))]), }
-
-dict_tranforms_test = {
-    "cifar10"           : Compose([
-                                        ToTensor(),
-                                        Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]),
-    "emnist"            : Compose([
-                                        ToTensor(),
-                                        Normalize((0.1307,), (0.3081,))]),
-    "cifar100"          : Compose([
-                                        ToTensor(),
-                                        Normalize((0.5071, 0.4865, 0.4409), (0.2673, 0.2564, 0.2762))]), }
 
 
 fds = None  # Cache FederatedDataset

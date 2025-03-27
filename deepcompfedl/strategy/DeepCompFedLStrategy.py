@@ -29,7 +29,9 @@ from flwr.server.strategy.aggregate import aggregate, aggregate_inplace, weighte
 
 from deepcompfedl.compression.pruning import prune
 from deepcompfedl.compression.quantization import quantize
-from deepcompfedl.task import set_weights
+from deepcompfedl.compression.decoding import huffman_decode_model
+from deepcompfedl.task import get_weights, set_weights
+from deepcompfedl.models.net import Net
 from deepcompfedl.models.resnet18 import ResNet18
 from deepcompfedl.models.resnet12 import ResNet12
 from deepcompfedl.models.qresnet12 import QResNet12
@@ -139,8 +141,9 @@ class DeepCompFedLStrategy(FedAvg):
         pruning_rate: float = 0.,
         enable_quantization: bool = False,
         bits_quantization: int = 32,
-        layer_quantization: bool = True,
+        layer_compression: bool = True,
         init_space_quantization: str = "uniform",
+        full_compression: bool = False,
         number: int = 1,
         save_online: bool = False,
         save_local: bool = False,
@@ -176,8 +179,9 @@ class DeepCompFedLStrategy(FedAvg):
         self.pruning_rate = pruning_rate
         self.enable_quantization = enable_quantization
         self.bits_quantization = bits_quantization
-        self.layer_quantization = layer_quantization
+        self.layer_compression = layer_compression
         self.init_space_quantization = init_space_quantization
+        self.full_compression = full_compression
         self.begin_round = 0.
         self.end_configure_fit = 0.
         self.begin_aggregate_fit = 0.
@@ -187,7 +191,7 @@ class DeepCompFedLStrategy(FedAvg):
         
         if save_online:
             wandb.init(
-                project=f"deepcompfedl-hyperparameters",
+                project=f"deepcompfedl-opticomp",
                 name=self.id,
                 config={
                     "aggregation-strategy": "DeepCompFedLStrategy",
@@ -201,6 +205,7 @@ class DeepCompFedLStrategy(FedAvg):
                     "bits-quantization": bits_quantization,
                     "batch-size": batch_size,
                     "learning-rate": learning_rate,
+                    "full-compression": full_compression,
                 },
             )
 
@@ -246,6 +251,27 @@ class DeepCompFedLStrategy(FedAvg):
         if not self.accept_failures and failures:
             return None, {}
 
+        if self.full_compression:
+            old_results = results
+            results = []
+            
+            if self.model == "Net":
+                model = Net()
+            elif self.model == "QResNet12":
+                model = QResNet12(num_classes=10, weight_quant=self.bits_quantization)
+            elif self.model == "QResNet18":
+                model = QResNet18(num_classes=10, weight_quant=self.bits_quantization)
+            elif self.model == "ResNet12":
+                model = ResNet12(num_classes=10)
+            elif self.model == "ResNet18":
+                model = ResNet18(num_classes=10)
+            
+            for _, fit_res in old_results:
+                cl_id = parameters_to_ndarrays(fit_res.parameters)[0].item()
+                net = huffman_decode_model(model, f"deepcompfedl/encodings/cl{cl_id}/")
+                parameters = ndarrays_to_parameters(get_weights(net))
+                results.append((_, FitRes(fit_res.status, parameters, fit_res.num_examples, fit_res.metrics)))
+            
         if self.inplace:
             # Does in-place weighted average of results
             aggregated_ndarrays = aggregate_inplace(results)
@@ -264,7 +290,7 @@ class DeepCompFedLStrategy(FedAvg):
         if self.enable_quantization and self.model[0] != "Q":
             aggregated_ndarrays = quantize(aggregated_ndarrays,
                                             self.bits_quantization,
-                                            self.layer_quantization,
+                                            self.layer_compression,
                                             self.init_space_quantization)
 
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
