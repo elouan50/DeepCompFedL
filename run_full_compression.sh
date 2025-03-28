@@ -3,9 +3,9 @@
 
 for number in 1 2 3
 do
-    for qbits in 8 4 3
+    for qbits in 32 8 4 3
     do
-        for prate in 0.95
+        for prate in 0.0 0.2 0.5 0.95
         do
             echo "Experiment with quantization on $qbits bits and 1 local epochs."
             flwr run --run-config "
