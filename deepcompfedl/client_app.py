@@ -86,20 +86,21 @@ class FlowerClient(NumPyClient):
         after_training = time.perf_counter()
         train_time = after_training - begin
         
+        params = get_weights(self.net)
+        
         if self.full_compression:
-            diff=[]
-            centroids=[]
-            indices=[]
-            
             if os.path.exists(f'deepcompfedl/encodings/cl{self.partition_id}'):
                 shutil.rmtree(f'deepcompfedl/encodings/cl{self.partition_id}')
             os.makedirs(f'deepcompfedl/encodings/cl{self.partition_id}', exist_ok=True)
             
+            ### Get pruning threshold
+            if 0 < self.pruning_rate < 1:
+                sorted = torch.cat([torch.from_numpy(i).flatten().abs() for i in params]).sort()[0]
+                threshold = sorted[int(len(sorted) * self.pruning_rate)].item()
+            
             for name, param in self.net.named_parameters():
                 ### Apply Pruning
                 if  0 < self.pruning_rate < 1:
-                    sorted = torch.cat([param.flatten().abs()]).sort()[0]
-                    threshold = sorted[int(len(sorted) * self.pruning_rate)].item()
                     param.data[param.abs() <= threshold] = 0
                 
                 ### Apply Quantization
@@ -126,11 +127,10 @@ class FlowerClient(NumPyClient):
                         # For indices
                     else:
                         log(WARNING, "Parameter not recognized")
-                                
+
             return [self.partition_id], len(self.trainloader.dataset), {"train-loss": train_loss, "training-time": train_time, "compression-time": time.perf_counter() - after_training}
-                
+
         else:
-            params = get_weights(self.net)
             if self.layer_compression:
                 for i, layer in enumerate(params):
                     ### Apply Pruning
