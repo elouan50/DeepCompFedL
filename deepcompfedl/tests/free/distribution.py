@@ -11,8 +11,8 @@ import matplotlib.cm as cm
 # Parameters
 dataset = "cifar10"
 num_classes = 10
-num_partitions = 100
-alpha = 0.1
+num_partitions = 10
+alpha = 100
 
 
 # Fetch and analyse the distribution among clients
@@ -50,7 +50,7 @@ def plot_colored_bars(matrix):
     normalized_matrix = matrix / row_sums  # Make each row proportional
 
     # Create a figure
-    fig, ax = plt.subplots(figsize=(10, 20))  # Adjust the figure size based on m
+    fig, ax = plt.subplots(figsize=(10, 3))  # Adjust the figure size based on m
 
     # Generate colors for each column
     colors = cm.RdYlGn(np.linspace(0, 1, n))  # Use a colormap to get n distinct colors
@@ -69,10 +69,10 @@ def plot_colored_bars(matrix):
     ax.set_xlim(0, 1)  # Ensure the total width of each row is 1 (normalized)
     ax.set_xlabel("Class distribution")
     ax.set_xticks([])
-    ax.set_title("Dirichlet distribution")
+    ax.set_title(f"Dirichlet distribution with alpha={alpha}")
     ax.invert_yaxis()  # Invert the y-axis so the first row appears at the top
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f"dirichlet_distribution_{alpha}.png", dpi=300, bbox_inches='tight')
 
 
 # Plot the result
