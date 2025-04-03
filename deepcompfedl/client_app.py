@@ -11,7 +11,7 @@ from flwr.common.logger import log
 
 from deepcompfedl.compression.pruning import prune, prune_layer
 from deepcompfedl.compression.quantization import quantize, quantize_layer
-from deepcompfedl.compression.encoding import huffman_encode, huffman_encode_model
+from deepcompfedl.compression.encoding import huffman_encode
 from deepcompfedl.compression.metrics import (
     pruned_weights,
     quantized,
@@ -89,9 +89,9 @@ class FlowerClient(NumPyClient):
         params = get_weights(self.net)
         
         if self.full_compression:
-            if os.path.exists(f'deepcompfedl/encodings/cl{self.partition_id}'):
-                shutil.rmtree(f'deepcompfedl/encodings/cl{self.partition_id}')
-            os.makedirs(f'deepcompfedl/encodings/cl{self.partition_id}', exist_ok=True)
+            if os.path.exists(f'deepcompfedl/encodings/p{self.pruning_rate}-q{self.bits_quantization}/cl{self.partition_id}'):
+                shutil.rmtree(f'deepcompfedl/encodings/p{self.pruning_rate}-q{self.bits_quantization}/cl{self.partition_id}')
+            os.makedirs(f'deepcompfedl/encodings/p{self.pruning_rate}-q{self.bits_quantization}/cl{self.partition_id}', exist_ok=True)
             
             ### Get pruning threshold
             if 0 < self.pruning_rate < 1:
@@ -115,16 +115,17 @@ class FlowerClient(NumPyClient):
                         kmeans.fit(compressed.data.reshape(-1,1))
                         new_weight = kmeans.cluster_centers_[kmeans.labels_].reshape(-1)
                         compressed.data = new_weight
-                        param.data = torch.as_tensor(compressed.toarray()).reshape(param.data.shape)
 
                 if compressed.data.size > 0:
                     ### Huffman encode
                     if 'weight' in name or 'bias' in name:
                         # For index difference
-                        t0, d0 = huffman_encode(compressed.data.get(), name+f'_{form}_data', f'deepcompfedl/encodings/cl{self.partition_id}')
-                        # For centroids
-                        t1, d1 = huffman_encode(compressed.indices.get(), name+f'_{form}_indices', f'deepcompfedl/encodings/cl{self.partition_id}')
-                        # For indices
+                        if not compressed.has_sorted_indices:
+                            compressed.sort_indices()
+                        diff = compressed.indices.get() - np.concatenate([[0], compressed.indices[:-1].get()])
+                        huffman_encode(diff, name+f'_{form}_indices', f'deepcompfedl/encodings/p{self.pruning_rate}-q{self.bits_quantization}/cl{self.partition_id}')
+                        # For data
+                        huffman_encode(compressed.data.get(), name+f'_{form}_data', f'deepcompfedl/encodings/p{self.pruning_rate}-q{self.bits_quantization}/cl{self.partition_id}')
                     else:
                         log(WARNING, "Parameter not recognized")
 
@@ -189,10 +190,13 @@ def client_fn(context: Context):
     layer_compression = context.run_config["layer-compression"]
     init_space_quantization = context.run_config["init-space-quantization"]
     
+    dataset = context.run_config["dataset"]
+    input_shape = {"MNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32)}
+    
     if model_name == "Net":
         net = Net()
     elif model_name == "ResNet12":
-        net = ResNet12()
+        net = ResNet12(input_shape=input_shape[dataset], num_classes=10)
     elif model_name == "ResNet18":
         net = ResNet18()
     elif model_name == "QResNet12":

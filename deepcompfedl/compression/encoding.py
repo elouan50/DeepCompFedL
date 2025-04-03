@@ -23,7 +23,7 @@ def huffman_encode(arr, prefix, save_dir='./', stats=False):
 
     # Calculate frequency in arr
     freq_map = defaultdict(int)
-    convert_map = {'float32':float, 'int32':int, 'int64':int}
+    convert_map = {'float32':float, 'float64':float, 'int32':int, 'int64':int}
     for value in np.nditer(arr):
         value = convert_map[dtype](value)
         freq_map[value] += 1
@@ -74,7 +74,7 @@ def encode_huffman_tree(root, dtype):
     """
     Encodes a huffman tree to string of '0's and '1's
     """
-    converter = {'float32':float2bitstr, 'int32':int2bitstr, 'int64':int2bitstr}
+    converter = {'float32':float2bitstr, 'float64':float2bitstr, 'int32':int2bitstr, 'int64':int2bitstr}
     code_list = []
     def encode_node(node):
         if node.value is not None: # node is leaf node
@@ -135,51 +135,3 @@ def bitstr2int(bitstr):
 # Functions for calculating / reconstructing index diff
 def calc_index_diff(indptr):
     return indptr[1:] - indptr[:-1]
-
-
-
-# Encode / Decode models
-def huffman_encode_model(model, directory='encodings/', stats=False):
-    os.makedirs(directory, exist_ok=True)
-    original_total = 0
-    compressed_total = 0
-    if stats:
-        print(f"{'Layer':<15} | {'original':>10} {'compressed':>10} {'improvement':>11} {'percent':>7}")
-        print('-'*70)
-    for name, param in model.named_parameters():
-        if 'mask' in name:
-            continue
-        if 'weight' in name:
-            weight = param.data.cpu().numpy()
-            shape = weight.shape
-            form = 'csc'
-            mat = csc_matrix(weight.reshape(-1,1))
-
-            # Encode
-            t0, d0 = huffman_encode(mat.data, name+f'_{form}_data', directory, stats)
-            t1, d1 = huffman_encode(mat.indices, name+f'_{form}_indices', directory, stats)
-
-            # Print statistics
-            original = mat.data.nbytes + mat.indices.nbytes + mat.indptr.nbytes
-            compressed = t0 + t1 + t2 + d0 + d1 + d2
-
-            if stats:
-                print(f"{name:<15} | {original:10} {compressed:10} {original / compressed:>10.2f}x {100 * compressed / original:>6.2f}%")
-        else: # bias
-            # Note that we do not huffman encode bias
-            bias = param.data.cpu().numpy()
-            if not(stats):
-                bias.dump(f'{directory}/{name}', stats)
-
-            # Print statistics
-            original = bias.nbytes
-            compressed = original
-
-            if stats:
-                print(f"{name:<15} | {original:10} {compressed:10} {original / compressed:>10.2f}x {100 * compressed / original:>6.2f}%")
-        original_total += original
-        compressed_total += compressed
-
-    if stats:
-        print('-'*70)
-        print(f"{'total':15} | {original_total:>10} {compressed_total:>10} {original_total / compressed_total:>10.2f}x {100 * compressed_total / original_total:>6.2f}%")

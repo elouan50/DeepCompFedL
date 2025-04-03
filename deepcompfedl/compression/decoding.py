@@ -31,14 +31,17 @@ def huffman_decode_model(model, directory='encodings/'):
 
             # Decode data
             data = huffman_decode(directory, name+f'_{form}_data', dtype='float32')
-            indices = huffman_decode(directory, name+f'_{form}_indices', dtype='int32')
+            indices = cp.cumsum(huffman_decode(directory, name+f'_{form}_indices', dtype='int32'))
             indptr = cp.array([0, len(indices)], dtype='int32')
             
             # Construct matrix
             if len(data) == 0:
                 param.data = torch.zeros(shape).to(dev)
             else:
-                mat = matrix((data, indices, indptr)).todense().get()
+                try:
+                    mat = matrix((data, indices, indptr)).todense().get()
+                except:
+                    print(data, indices, name)
                 # Insert to model
                 # When the last weights of a layer in the initial are null,
                 # the CSC representation doesn't represent them ;
