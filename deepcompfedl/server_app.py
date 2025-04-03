@@ -38,11 +38,13 @@ def server_fn(context: Context):
     batch_size = context.run_config["batch-size"]
     learning_rate = context.run_config["learning-rate"]
 
+    input_shape = {"MNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32)}
+    
     # Initialize model parameters
     if model_name == "Net":
         model = Net()
     elif model_name == "ResNet12":
-        model = ResNet12() # Might have to use 64 as first parameter??
+        model = ResNet12(input_shape=input_shape[dataset])
     elif model_name == "ResNet18":
         model = ResNet18()
     elif model_name == "QResNet12":

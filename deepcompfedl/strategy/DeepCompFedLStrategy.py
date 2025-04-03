@@ -172,6 +172,7 @@ class DeepCompFedLStrategy(FedAvg):
         self.model = model
         self.epochs = epochs
         self.num_rounds = num_rounds
+        self.dataset = dataset
         self.number = number
         self.save_online = save_online
         self.save_local = save_local
@@ -191,7 +192,7 @@ class DeepCompFedLStrategy(FedAvg):
         
         if save_online:
             wandb.init(
-                project=f"deepcompfedl-opticomp",
+                project=f"deepcompfedl-mnist",
                 name=self.id,
                 config={
                     "aggregation-strategy": "DeepCompFedLStrategy",
@@ -250,6 +251,8 @@ class DeepCompFedLStrategy(FedAvg):
         # Do not aggregate if there are failures and failures are not accepted
         if not self.accept_failures and failures:
             return None, {}
+        
+        input_shape = {"MNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32)}
 
         if self.full_compression:
             old_results = results
@@ -262,13 +265,13 @@ class DeepCompFedLStrategy(FedAvg):
             elif self.model == "QResNet18":
                 model = QResNet18(num_classes=10, weight_quant=self.bits_quantization)
             elif self.model == "ResNet12":
-                model = ResNet12(num_classes=10)
+                model = ResNet12(input_shape=input_shape[self.dataset], num_classes=10)
             elif self.model == "ResNet18":
                 model = ResNet18(num_classes=10)
             
             for _, fit_res in old_results:
                 cl_id = parameters_to_ndarrays(fit_res.parameters)[0].item()
-                net = huffman_decode_model(model, f"deepcompfedl/encodings/cl{cl_id}/")
+                net = huffman_decode_model(model, f"deepcompfedl/encodings/p{self.pruning_rate}-q{self.bits_quantization}/cl{cl_id}/")
                 parameters = ndarrays_to_parameters(get_weights(net))
                 results.append((_, FitRes(fit_res.status, parameters, fit_res.num_examples, fit_res.metrics)))
             
@@ -308,7 +311,7 @@ class DeepCompFedLStrategy(FedAvg):
                 set_weights(model, aggregated_ndarrays)
                 torch.save(model, f"{save_dir}/{self.id}.ptmodel")
             elif self.model == "ResNet12":
-                model = ResNet12()
+                model = ResNet12(input_shape=input_shape[self.dataset])
                 set_weights(model, aggregated_ndarrays)
                 torch.save(model, f"{save_dir}/{self.id}.ptmodel")
             elif self.model == "QResNet12":

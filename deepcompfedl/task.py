@@ -12,8 +12,8 @@ from flwr_datasets.partitioner import IidPartitioner, DirichletPartitioner
 fds = None  # Cache FederatedDataset
 
 
-def load_data(partition_id: int, num_partitions: int, alpha: int | float, dataset: str, batch_size: int = 32):
-    """Load partition CIFAR10 data."""
+def load_data(partition_id: int, num_partitions: int, alpha: int | float, dataset: str = "cifar10", batch_size: int = 32):
+    """Load partition data."""
     # Only initialize `FederatedDataset` once
     global fds
     if fds is None:
@@ -23,15 +23,29 @@ def load_data(partition_id: int, num_partitions: int, alpha: int | float, datase
                                            alpha=alpha,
                                            min_partition_size=1,
                                            self_balancing=True)
-        fds = FederatedDataset(
-            dataset="uoft-cs/cifar10",
-            partitioners={"train": partitioner},
-        )
-    partition = fds.load_partition(partition_id)
+        if dataset == "CIFAR-10":
+            fds = FederatedDataset(
+                dataset="uoft-cs/cifar10",
+                partitioners={"train": partitioner},
+            )
+        elif dataset == "MNIST":
+            fds = FederatedDataset(
+                dataset="ylecun/mnist",
+                partitioners={"train": partitioner},
+            )
+        else:
+            raise ValueError(f"Dataset {dataset} not supported.")
+    # Load partition data
+    if dataset == "CIFAR-10":
+        partition = fds.load_partition(partition_id)
+    elif dataset == "MNIST":
+        partition = fds.load_partition(partition_id).rename_column("image", "img")
     # Divide data on each node: 80% train, 20% test
     partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
     pytorch_transforms = Compose(
         [ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+    ) if dataset == "CIFAR-10" else Compose(
+        [ToTensor(), Normalize((0.1307,), (0.3081,))]
     )
 
     def apply_transforms(batch):
