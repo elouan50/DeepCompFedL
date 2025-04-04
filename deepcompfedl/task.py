@@ -33,6 +33,11 @@ def load_data(partition_id: int, num_partitions: int, alpha: int | float, datase
                 dataset="ylecun/mnist",
                 partitioners={"train": partitioner},
             )
+        elif dataset == "FEMNIST":
+            fds = FederatedDataset(
+                dataset="flwrlabs/femnist",
+                partitioners={"train": partitioner},
+            )
         else:
             raise ValueError(f"Dataset {dataset} not supported.")
     # Load partition data
