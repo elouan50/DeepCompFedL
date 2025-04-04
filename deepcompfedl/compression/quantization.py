@@ -104,6 +104,5 @@ def apply_kmeans(mat, nbits=8, init_space="uniform"):
             kmeans.fit(mat.data.reshape(-1,1))
             new_weight = kmeans.cluster_centers_[kmeans.labels_].reshape(-1)
             mat.data = new_weight
-            flat = mat.toarray()
-    
-    return flat
+
+    return mat.toarray()
