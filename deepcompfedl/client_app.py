@@ -41,6 +41,7 @@ class FlowerClient(NumPyClient):
     def __init__(self,
                  net,
                  model_name,
+                 dataset,
                  trainloader,
                  valloader,
                  learning_rate,
@@ -56,6 +57,7 @@ class FlowerClient(NumPyClient):
                  ): 
         self.net = net
         self.model_name = model_name
+        self.dataset = dataset
         self.trainloader = trainloader
         self.valloader = valloader
         self.learning_rate = learning_rate
@@ -81,6 +83,7 @@ class FlowerClient(NumPyClient):
             self.learning_rate,
             self.local_epochs,
             self.device,
+            self.dataset,
         )
         
         after_training = time.perf_counter()
@@ -160,7 +163,7 @@ class FlowerClient(NumPyClient):
 
     def evaluate(self, parameters, config):
         set_weights(self.net, parameters)
-        loss, accuracy = test(self.net, self.valloader, self.device)
+        loss, accuracy = test(self.net, self.valloader, self.device, self.dataset)
         
         ### Apply Pruning
         if self.enable_pruning:
@@ -191,12 +194,13 @@ def client_fn(context: Context):
     init_space_quantization = context.run_config["init-space-quantization"]
     
     dataset = context.run_config["dataset"]
-    input_shape = {"MNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32)}
+    input_shape = {"MNIST": (1, 28, 28), "EMNIST": (1, 28, 28), "FEMNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32), "ImageNet": (3, 64, 64)}
+    num_classes = {"MNIST": 10, "EMNIST": 10, "FEMNIST": 62, "CIFAR-10": 10, "ImageNet": 1000}
     
     if model_name == "Net":
         net = Net()
     elif model_name == "ResNet12":
-        net = ResNet12(input_shape=input_shape[dataset], num_classes=10)
+        net = ResNet12(input_shape=input_shape[dataset], num_classes=num_classes[dataset])
     elif model_name == "ResNet18":
         net = ResNet18()
     elif model_name == "QResNet12":
@@ -208,6 +212,7 @@ def client_fn(context: Context):
     
     client = FlowerClient(net,
                           model_name,
+                          dataset,
                           trainloader,
                           valloader,
                           learning_rate,

@@ -252,7 +252,8 @@ class DeepCompFedLStrategy(FedAvg):
         if not self.accept_failures and failures:
             return None, {}
         
-        input_shape = {"MNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32)}
+        input_shape = {"MNIST": (1, 28, 28), "MNIST": (1, 28, 28), "FEMNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32)}
+        num_classes = {"MNIST": 10, "EMNIST": 10, "FEMNIST": 62, "CIFAR-10": 10, "ImageNet": 1000}
 
         if self.full_compression:
             old_results = results
@@ -261,13 +262,13 @@ class DeepCompFedLStrategy(FedAvg):
             if self.model == "Net":
                 model = Net()
             elif self.model == "QResNet12":
-                model = QResNet12(num_classes=10, weight_quant=self.bits_quantization)
+                model = QResNet12(num_classes=num_classes[self.dataset], weight_quant=self.bits_quantization)
             elif self.model == "QResNet18":
-                model = QResNet18(num_classes=10, weight_quant=self.bits_quantization)
+                model = QResNet18(num_classes=num_classes[self.dataset], weight_quant=self.bits_quantization)
             elif self.model == "ResNet12":
-                model = ResNet12(input_shape=input_shape[self.dataset], num_classes=10)
+                model = ResNet12(input_shape=input_shape[self.dataset], num_classes=num_classes[self.dataset])
             elif self.model == "ResNet18":
-                model = ResNet18(num_classes=10)
+                model = ResNet18(num_classes=num_classes[self.dataset])
             
             for _, fit_res in old_results:
                 cl_id = parameters_to_ndarrays(fit_res.parameters)[0].item()

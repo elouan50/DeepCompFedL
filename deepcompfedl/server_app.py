@@ -38,15 +38,16 @@ def server_fn(context: Context):
     batch_size = context.run_config["batch-size"]
     learning_rate = context.run_config["learning-rate"]
 
-    input_shape = {"MNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32)}
+    input_shape = {"MNIST": (1, 28, 28), "EMNIST": (1, 28, 28), "FEMNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32), "ImageNet": (3, 64, 64)}
+    num_classes = {"MNIST": 10, "EMNIST": 10, "FEMNIST": 62, "CIFAR-10": 10, "ImageNet": 1000}
     
     # Initialize model parameters
     if model_name == "Net":
         model = Net()
     elif model_name == "ResNet12":
-        model = ResNet12(input_shape=input_shape[dataset])
+        model = ResNet12(input_shape=input_shape[dataset], num_classes=num_classes[dataset])
     elif model_name == "ResNet18":
-        model = ResNet18()
+        model = ResNet18(num_classes=num_classes[dataset])
     elif model_name == "QResNet12":
         model = QResNet12(bits_quantization)
     elif model_name == "QResNet18":
