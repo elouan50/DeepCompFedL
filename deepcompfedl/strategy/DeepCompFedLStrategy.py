@@ -252,8 +252,8 @@ class DeepCompFedLStrategy(FedAvg):
         if not self.accept_failures and failures:
             return None, {}
         
-        input_shape = {"MNIST": (1, 28, 28), "MNIST": (1, 28, 28), "FEMNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32)}
-        num_classes = {"MNIST": 10, "EMNIST": 10, "FEMNIST": 62, "CIFAR-10": 10, "ImageNet": 1000}
+        input_shape = {"MNIST": (1, 28, 28), "MNIST": (1, 28, 28), "FEMNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32), "ImageNet": (3, 64, 64)}
+        num_classes = {"MNIST": 10, "EMNIST": 10, "FEMNIST": 62, "CIFAR-10": 10, "ImageNet": 200}
 
         if self.full_compression:
             old_results = results
@@ -312,7 +312,7 @@ class DeepCompFedLStrategy(FedAvg):
                 set_weights(model, aggregated_ndarrays)
                 torch.save(model, f"{save_dir}/{self.id}.ptmodel")
             elif self.model == "ResNet12":
-                model = ResNet12(input_shape=input_shape[self.dataset])
+                model = ResNet12(input_shape=input_shape[self.dataset], num_classes=num_classes[self.dataset])
                 set_weights(model, aggregated_ndarrays)
                 torch.save(model, f"{save_dir}/{self.id}.ptmodel")
             elif self.model == "QResNet12":

@@ -39,7 +39,7 @@ def server_fn(context: Context):
     learning_rate = context.run_config["learning-rate"]
 
     input_shape = {"MNIST": (1, 28, 28), "EMNIST": (1, 28, 28), "FEMNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32), "ImageNet": (3, 64, 64)}
-    num_classes = {"MNIST": 10, "EMNIST": 10, "FEMNIST": 62, "CIFAR-10": 10, "ImageNet": 1000}
+    num_classes = {"MNIST": 10, "EMNIST": 10, "FEMNIST": 62, "CIFAR-10": 10, "ImageNet": 200}
     
     # Initialize model parameters
     if model_name == "Net":

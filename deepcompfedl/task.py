@@ -64,7 +64,7 @@ def load_data(partition_id: int, num_partitions: int, alpha: int | float, datase
 
     def apply_transforms(batch):
         """Apply transforms to the partition from FederatedDataset."""
-        img_name = {"FEMNIST": "image", "MNIST": "image", "EMNIST": "image", "CIFAR-10": "img", "ImageNet": "img"}
+        img_name = {"FEMNIST": "image", "MNIST": "image", "EMNIST": "image", "CIFAR-10": "img", "ImageNet": "image"}
         batch[img_name[dataset]] = [pytorch_transforms(img) for img in batch[img_name[dataset]]]
         return batch
 
@@ -79,7 +79,7 @@ def train(net, trainloader, learning_rate, epochs, device, dataset):
     net.to(device)  # move model to GPU if available
     criterion = torch.nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9)
-    img_name = {"FEMNIST": "image", "MNIST": "image", "EMNIST": "image", "CIFAR-10": "img", "ImageNet": "img"}
+    img_name = {"FEMNIST": "image", "MNIST": "image", "EMNIST": "image", "CIFAR-10": "img", "ImageNet": "image"}
     label_name = {"FEMNIST": "character", "MNIST": "label", "EMNIST": "label", "CIFAR-10": "label", "ImageNet": "label"}
     net.train()
     running_loss = 0.0
@@ -102,7 +102,7 @@ def test(net, testloader, device, dataset):
     net.to(device)
     criterion = torch.nn.CrossEntropyLoss()
     correct, loss = 0, 0.0
-    img_name = {"FEMNIST": "image", "MNIST": "image", "EMNIST": "image", "CIFAR-10": "img", "ImageNet": "img"}
+    img_name = {"FEMNIST": "image", "MNIST": "image", "EMNIST": "image", "CIFAR-10": "img", "ImageNet": "image"}
     label_name = {"FEMNIST": "character", "MNIST": "label", "EMNIST": "label", "CIFAR-10": "label", "ImageNet": "label"}
     with torch.no_grad():
         for batch in testloader:
