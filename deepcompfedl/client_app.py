@@ -198,7 +198,7 @@ def client_fn(context: Context):
     num_classes = {"MNIST": 10, "EMNIST": 10, "FEMNIST": 62, "CIFAR-10": 10, "ImageNet": 200}
     
     if model_name == "Net":
-        net = Net()
+        net = Net(input_shape=input_shape[dataset], num_classes=num_classes[dataset])
     elif model_name == "ResNet12":
         net = ResNet12(input_shape=input_shape[dataset], num_classes=num_classes[dataset])
     elif model_name == "ResNet18":

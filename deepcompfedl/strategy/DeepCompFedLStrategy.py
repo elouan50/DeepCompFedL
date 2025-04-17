@@ -192,7 +192,7 @@ class DeepCompFedLStrategy(FedAvg):
         
         if save_online:
             wandb.init(
-                project=f"deepcompfedl-mnist",
+                project=f"deepcompfedl-femnist-net",
                 name=self.id,
                 config={
                     "aggregation-strategy": "DeepCompFedLStrategy",
@@ -260,7 +260,7 @@ class DeepCompFedLStrategy(FedAvg):
             results = []
             
             if self.model == "Net":
-                model = Net()
+                model = Net(input_shape=input_shape[self.dataset], num_classes=num_classes[self.dataset])
             elif self.model == "QResNet12":
                 model = QResNet12(num_classes=num_classes[self.dataset], weight_quant=self.bits_quantization)
             elif self.model == "QResNet18":

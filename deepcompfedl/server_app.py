@@ -43,7 +43,7 @@ def server_fn(context: Context):
     
     # Initialize model parameters
     if model_name == "Net":
-        model = Net()
+        model = Net(input_shape=input_shape[dataset], num_classes=num_classes[dataset])
     elif model_name == "ResNet12":
         model = ResNet12(input_shape=input_shape[dataset], num_classes=num_classes[dataset])
     elif model_name == "ResNet18":
