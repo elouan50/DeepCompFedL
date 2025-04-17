@@ -1,3 +1,4 @@
 wandb
 .vscode
 .pytest_cache
+output*
