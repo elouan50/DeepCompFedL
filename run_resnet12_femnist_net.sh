@@ -4,9 +4,9 @@
 
 for number in 1 2 3
 do
-    for prate in 0.0 0.2 0.4 0.5 0.6 0.9
+    for prate in 0.25 0.5 0.6 0.7 0.8 0.9
     do
-        for qbits in 32 8 4
+        for qbits in 8 6 5 4 3
         do
             for fc in true false
             do
@@ -18,7 +18,7 @@ do
                     client-enable-quantization=true
                     bits-quantization=$qbits
                     full-compression=$fc
-                    model='ResNet12'
+                    model='Net'
                     dataset='FEMNIST'
                     fraction-fit=0.4
                     aggregation-strategy='DeepCompFedLStrategy'

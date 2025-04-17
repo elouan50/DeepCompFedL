@@ -2,7 +2,7 @@
 
 # We want to make a variation on the quantization and the number of clients epochs
 
-for number in 1 2 3
+for number in 4 5 6
 do
     for qbits in 8 4
     do
@@ -19,7 +19,6 @@ do
                                 client-epochs=$epochs
                                 number=$number
                                 alpha=100
-                                batch-size=8
                                 save-online=true
                                 save-local=true
                                 "
