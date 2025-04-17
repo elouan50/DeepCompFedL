@@ -5,13 +5,12 @@ model to the data. The model is then evaluated and plotted.
 """
 
 import numpy as np
-import pandas as pd
 import wandb
 
 api = wandb.Api()
 project = "elouan50-rwth-aachen-university/deepcompfedl-exp1-resnet18"
 
-accuracies = np.zeros((12,1000))
+accuracies = np.zeros((12,999))
 
 runs = api.runs(project)
 
@@ -20,28 +19,27 @@ def first_order_response(t, K, tau, bias):
    return K*(1-np.exp(-t/tau)) + bias
 
 for run in runs:
-   if int(run.name[-1])>3:
-      df = run.history(keys=["accuracy"])
-      c = run.config
+	df = run.history(keys=["accuracy"], samples=999)
+	print(df.size, run.name)
+	c = run.config
 
-      pr = float(c["pruning-rate"])
-      if pr<0.95:
-         pr = int(pr*10)
-      elif pr==0.95:
-         pr = 10
-      elif pr==0.99:
-         pr = 11
-      else:
-         break
+	pr = float(c["pruning-rate"])
+	if pr<0.95:
+		pr = int(pr*10)
+	elif pr==0.95:
+		pr = 10
+	elif pr==0.99:
+		pr = 11
+	else:
+		break
 
-      # Extract data
-      accuracies[pr] += np.array(df['accuracy'])
+	# Extract data
+	accuracies[pr] += np.array(df['accuracy'])
 
-steps = np.array([i for i in range(1,101)])
+steps = np.array([i for i in range(1,1000)])
 
-for lc in range(2):
-	accuracy = accuracies[lc, pr] / 3
-	rt = rnd_time[lc, pr] / 3
+for pr in range(12):
+	accuracy = accuracies[pr] / 3
 
 	min_, max_ = min(accuracy), max(accuracy)
 
@@ -52,7 +50,6 @@ for lc in range(2):
 
 	# Calculate the model and evaluate it
 	accuracy_calc = first_order_response(steps, K, tau, bias)
-	mse = np.mean((accuracy - accuracy_calc) ** 2)
 	r2 = 1-np.sum((accuracy - accuracy_calc)**2)/np.sum((accuracy - np.mean(accuracy))**2)
 
 	print("---------------------------")
