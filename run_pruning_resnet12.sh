@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# We want to make a variation on the pruning rate and the number of clients epochs
+# We make a variation on the pruning rate and the number of clients epochs
 
 for number in 1 2 3
 do
