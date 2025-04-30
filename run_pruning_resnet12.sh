@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# We make a variation on the pruning rate and the number of clients epochs
+# For the pruning alone experiments
+
+# We run it with the ResNet-12 on IID data
 
 for number in 1 2 3
 do

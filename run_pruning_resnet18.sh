@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# We want to make a variation on the pruning rate.
+# For the pruning alone experiments
+
+# We run it with the ResNet-18 on non-IID data
 
 for number in 1 2 3
 do

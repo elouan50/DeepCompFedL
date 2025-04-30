@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# To set the best hyperparameters for the FCP
+
 # We want to make a variation on:
 # - pruning or not
 # - quantization or not

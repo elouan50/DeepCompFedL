@@ -1,6 +1,8 @@
 #!/bin/bash
 
+# For the quantization alone experiments
 
+# We run it with the ResNet-18 on IID data
 
 for number in 1 2 3
 do

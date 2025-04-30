@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# For the quantization alone experiments
+
 # We want to make a variation on:
 # - quantization bits
 # - number of clients epochs

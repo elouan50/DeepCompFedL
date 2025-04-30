@@ -1,14 +1,16 @@
 #!/bin/bash
 
-# We want to make a variation on the quantization and the number of clients epochs
+# For the quantization alone experiments
 
-for number in 4 5 6
+# We run it in the QAT case
+
+for number in 1 2 3
 do
     for qbits in 8 4
     do
         for epochs in 1 10
         do
-            echo "Experiment with pruning rate $prate and $epochs local epochs."
+            echo "Experiment with $qbits bits quantization and $epochs local epochs."
             flwr run --run-config "
                                 server-rounds=100
                                 client-enable-quantization=true

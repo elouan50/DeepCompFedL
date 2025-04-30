@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# We want to make a variation on the pruning rate and the number of clients epochs
+# For the FCP experiments:
+# Run it in the second described scenario
 
 for number in 1 2 3
 do
