@@ -3,69 +3,69 @@
 from collections import OrderedDict
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torchvision.transforms import Compose, Normalize, ToTensor, RandomCrop, RandomHorizontalFlip
+from torchvision.transforms import Compose, Normalize, ToTensor
 from flwr_datasets import FederatedDataset
 from flwr_datasets.partitioner import IidPartitioner, DirichletPartitioner
-
-
-dict_tranforms = {  
-    "cifar10"           : Compose([
-                                        RandomCrop(32, padding=4),
-                                        RandomHorizontalFlip(),
-                                        ToTensor(),
-                                        Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]),
-    "emnist"            : Compose([
-                                        ToTensor(),
-                                        Normalize((0.1307,), (0.3081,))]), 
-    "cifar100"          : Compose([
-                                        RandomCrop(32, padding=4),
-                                        RandomHorizontalFlip(),
-                                        ToTensor(),
-                                        Normalize((0.5071, 0.4865, 0.4409), (0.2673, 0.2564, 0.2762))]), }
-
-dict_tranforms_test = {
-    "cifar10"           : Compose([
-                                        ToTensor(),
-                                        Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]),
-    "emnist"            : Compose([
-                                        ToTensor(),
-                                        Normalize((0.1307,), (0.3081,))]),
-    "cifar100"          : Compose([
-                                        ToTensor(),
-                                        Normalize((0.5071, 0.4865, 0.4409), (0.2673, 0.2564, 0.2762))]), }
 
 
 fds = None  # Cache FederatedDataset
 
 
-def load_data(partition_id: int, num_partitions: int, alpha: int | float, dataset: str, batch_size: int = 32):
-    """Load partition CIFAR10 data."""
+def load_data(partition_id: int, num_partitions: int, alpha: int | float, dataset: str = "cifar10", batch_size: int = 32):
+    """Load partition data."""
     # Only initialize `FederatedDataset` once
     global fds
     if fds is None:
         # partitioner = IidPartitioner(num_partitions=num_partitions)
+        partition_by = "character" if dataset == "FEMNIST" else "label"
         partitioner = DirichletPartitioner(num_partitions=num_partitions,
-                                           partition_by="label",
+                                           partition_by=partition_by,
                                            alpha=alpha,
                                            min_partition_size=1,
                                            self_balancing=True)
-        fds = FederatedDataset(
-            dataset="uoft-cs/cifar10",
-            partitioners={"train": partitioner},
-        )
+        if dataset == "CIFAR-10":
+            fds = FederatedDataset(
+                dataset="uoft-cs/cifar10",
+                partitioners={"train": partitioner},
+            )
+        elif dataset == "MNIST":
+            fds = FederatedDataset(
+                dataset="ylecun/mnist",
+                partitioners={"train": partitioner},
+            )
+        elif dataset == "FEMNIST":
+            fds = FederatedDataset(
+                dataset="flwrlabs/femnist",
+                partitioners={"train": partitioner},
+                trust_remote_code=True,
+            )
+        elif dataset == "ImageNet":
+            fds = FederatedDataset(
+                dataset="zh-plus/tiny-imagenet",
+                partitioners={"train": partitioner},
+            )
+        else:
+            raise ValueError(f"Dataset {dataset} not supported.")
+    # Load partition data
     partition = fds.load_partition(partition_id)
+    
+    if dataset == "CIFAR-10" or dataset == "ImageNet":
+        pytorch_transforms = Compose(
+            [ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+            )
+    elif dataset == "MNIST" or dataset == "FEMNIST":
+        pytorch_transforms = Compose(
+            [ToTensor(), Normalize((0.1307,), (0.3081,))]
+            )
     # Divide data on each node: 80% train, 20% test
     partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
-    pytorch_transforms = Compose(
-        [ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
-    )
+
 
     def apply_transforms(batch):
         """Apply transforms to the partition from FederatedDataset."""
-        batch["img"] = [pytorch_transforms(img) for img in batch["img"]]
+        img_name = {"FEMNIST": "image", "MNIST": "image", "EMNIST": "image", "CIFAR-10": "img", "ImageNet": "image"}
+        batch[img_name[dataset]] = [pytorch_transforms(img) for img in batch[img_name[dataset]]]
         return batch
 
     partition_train_test = partition_train_test.with_transform(apply_transforms)
@@ -74,17 +74,19 @@ def load_data(partition_id: int, num_partitions: int, alpha: int | float, datase
     return trainloader, testloader
 
 
-def train(net, trainloader, epochs, device):
+def train(net, trainloader, learning_rate, epochs, device, dataset):
     """Train the model on the training set."""
     net.to(device)  # move model to GPU if available
     criterion = torch.nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
+    optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9)
+    img_name = {"FEMNIST": "image", "MNIST": "image", "EMNIST": "image", "CIFAR-10": "img", "ImageNet": "image"}
+    label_name = {"FEMNIST": "character", "MNIST": "label", "EMNIST": "label", "CIFAR-10": "label", "ImageNet": "label"}
     net.train()
     running_loss = 0.0
     for _ in range(epochs):
         for batch in trainloader:
-            images = batch["img"]
-            labels = batch["label"]
+            images = batch[img_name[dataset]]
+            labels = batch[label_name[dataset]]
             optimizer.zero_grad()
             loss = criterion(net(images.to(device)), labels.to(device))
             loss.backward()
@@ -95,15 +97,17 @@ def train(net, trainloader, epochs, device):
     return avg_trainloss
 
 
-def test(net, testloader, device):
+def test(net, testloader, device, dataset):
     """Validate the model on the test set."""
     net.to(device)
     criterion = torch.nn.CrossEntropyLoss()
     correct, loss = 0, 0.0
+    img_name = {"FEMNIST": "image", "MNIST": "image", "EMNIST": "image", "CIFAR-10": "img", "ImageNet": "image"}
+    label_name = {"FEMNIST": "character", "MNIST": "label", "EMNIST": "label", "CIFAR-10": "label", "ImageNet": "label"}
     with torch.no_grad():
         for batch in testloader:
-            images = batch["img"].to(device)
-            labels = batch["label"].to(device)
+            images = batch[img_name[dataset]].to(device)
+            labels = batch[label_name[dataset]].to(device)
             outputs = net(images)
             loss += criterion(outputs, labels).item()
             correct += (torch.max(outputs.data, 1)[1] == labels).sum().item()

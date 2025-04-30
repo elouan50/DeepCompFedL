@@ -29,7 +29,9 @@ from flwr.server.strategy.aggregate import aggregate, aggregate_inplace, weighte
 
 from deepcompfedl.compression.pruning import prune
 from deepcompfedl.compression.quantization import quantize
-from deepcompfedl.task import set_weights
+from deepcompfedl.compression.decoding import huffman_decode_model
+from deepcompfedl.task import get_weights, set_weights
+from deepcompfedl.models.net import Net
 from deepcompfedl.models.resnet18 import ResNet18
 from deepcompfedl.models.resnet12 import ResNet12
 from deepcompfedl.models.qresnet12 import QResNet12
@@ -132,14 +134,16 @@ class DeepCompFedLStrategy(FedAvg):
         dataset: str = "",
         alpha: int | bool = 100,
         batch_size: int = 32,
+        learning_rate: float = 0.01,
         model: str = "",
         epochs: int = 1,
         enable_pruning: bool = False,
         pruning_rate: float = 0.,
         enable_quantization: bool = False,
         bits_quantization: int = 32,
-        layer_quantization: bool = True,
+        layer_compression: bool = True,
         init_space_quantization: str = "uniform",
+        full_compression: bool = False,
         number: int = 1,
         save_online: bool = False,
         save_local: bool = False,
@@ -168,6 +172,7 @@ class DeepCompFedLStrategy(FedAvg):
         self.model = model
         self.epochs = epochs
         self.num_rounds = num_rounds
+        self.dataset = dataset
         self.number = number
         self.save_online = save_online
         self.save_local = save_local
@@ -175,19 +180,20 @@ class DeepCompFedLStrategy(FedAvg):
         self.pruning_rate = pruning_rate
         self.enable_quantization = enable_quantization
         self.bits_quantization = bits_quantization
-        self.layer_quantization = layer_quantization
+        self.layer_compression = layer_compression
         self.init_space_quantization = init_space_quantization
+        self.full_compression = full_compression
         self.begin_round = 0.
         self.end_configure_fit = 0.
         self.begin_aggregate_fit = 0.
         self.end_round = 0.
         
-        self.id = f"p{pruning_rate}-q{bits_quantization}-e{epochs}-n{number}-bs{batch_size}"
+        self.id = f"p{pruning_rate}-q{bits_quantization}-e{epochs}-n{number}"
         
         if save_online:
             wandb.init(
-                project=f"deepcompfedl-{model.lower()}-{dataset.lower()}-r{num_rounds}",
-                id=self.id,
+                project=f"deepcompfedl-femnist-net",
+                name=self.id,
                 config={
                     "aggregation-strategy": "DeepCompFedLStrategy",
                     "num-rounds": num_rounds,
@@ -199,6 +205,8 @@ class DeepCompFedLStrategy(FedAvg):
                     "pruning-rate": pruning_rate,
                     "bits-quantization": bits_quantization,
                     "batch-size": batch_size,
+                    "learning-rate": learning_rate,
+                    "full-compression": full_compression,
                 },
             )
 
@@ -243,7 +251,31 @@ class DeepCompFedLStrategy(FedAvg):
         # Do not aggregate if there are failures and failures are not accepted
         if not self.accept_failures and failures:
             return None, {}
+        
+        input_shape = {"MNIST": (1, 28, 28), "MNIST": (1, 28, 28), "FEMNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32), "ImageNet": (3, 64, 64)}
+        num_classes = {"MNIST": 10, "EMNIST": 10, "FEMNIST": 62, "CIFAR-10": 10, "ImageNet": 200}
 
+        if self.full_compression:
+            old_results = results
+            results = []
+            
+            if self.model == "Net":
+                model = Net(input_shape=input_shape[self.dataset], num_classes=num_classes[self.dataset])
+            elif self.model == "QResNet12":
+                model = QResNet12(num_classes=num_classes[self.dataset], weight_quant=self.bits_quantization)
+            elif self.model == "QResNet18":
+                model = QResNet18(num_classes=num_classes[self.dataset], weight_quant=self.bits_quantization)
+            elif self.model == "ResNet12":
+                model = ResNet12(input_shape=input_shape[self.dataset], num_classes=num_classes[self.dataset])
+            elif self.model == "ResNet18":
+                model = ResNet18(num_classes=num_classes[self.dataset])
+            
+            for _, fit_res in old_results:
+                cl_id = parameters_to_ndarrays(fit_res.parameters)[0].item()
+                net = huffman_decode_model(model, f"deepcompfedl/encodings/p{self.pruning_rate}-q{self.bits_quantization}/cl{cl_id}/")
+                parameters = ndarrays_to_parameters(get_weights(net))
+                results.append((_, FitRes(fit_res.status, parameters, fit_res.num_examples, fit_res.metrics)))
+            
         if self.inplace:
             # Does in-place weighted average of results
             aggregated_ndarrays = aggregate_inplace(results)
@@ -262,7 +294,7 @@ class DeepCompFedLStrategy(FedAvg):
         if self.enable_quantization and self.model[0] != "Q":
             aggregated_ndarrays = quantize(aggregated_ndarrays,
                                             self.bits_quantization,
-                                            self.layer_quantization,
+                                            self.layer_compression,
                                             self.init_space_quantization)
 
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
@@ -280,7 +312,7 @@ class DeepCompFedLStrategy(FedAvg):
                 set_weights(model, aggregated_ndarrays)
                 torch.save(model, f"{save_dir}/{self.id}.ptmodel")
             elif self.model == "ResNet12":
-                model = ResNet12()
+                model = ResNet12(input_shape=input_shape[self.dataset], num_classes=num_classes[self.dataset])
                 set_weights(model, aggregated_ndarrays)
                 torch.save(model, f"{save_dir}/{self.id}.ptmodel")
             elif self.model == "QResNet12":

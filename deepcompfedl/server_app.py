@@ -28,21 +28,26 @@ def server_fn(context: Context):
     enable_quantization = context.run_config["server-enable-quantization"]
     pruning_rate = context.run_config["pruning-rate"]
     bits_quantization = context.run_config["bits-quantization"]
-    layer_quantization = context.run_config["layer-quantization"]
+    layer_compression = context.run_config["layer-compression"]
     init_space_quantization = context.run_config["init-space-quantization"]
+    full_compression = context.run_config["full-compression"]
     number = context.run_config["number"]
     save_online = context.run_config["save-online"]
     save_local = context.run_config["save-local"]
     alpha = context.run_config["alpha"]
     batch_size = context.run_config["batch-size"]
+    learning_rate = context.run_config["learning-rate"]
 
+    input_shape = {"MNIST": (1, 28, 28), "EMNIST": (1, 28, 28), "FEMNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32), "ImageNet": (3, 64, 64)}
+    num_classes = {"MNIST": 10, "EMNIST": 10, "FEMNIST": 62, "CIFAR-10": 10, "ImageNet": 200}
+    
     # Initialize model parameters
     if model_name == "Net":
-        model = Net()
+        model = Net(input_shape=input_shape[dataset], num_classes=num_classes[dataset])
     elif model_name == "ResNet12":
-        model = ResNet12() # Might have to use 64 as first parameter??
+        model = ResNet12(input_shape=input_shape[dataset], num_classes=num_classes[dataset])
     elif model_name == "ResNet18":
-        model = ResNet18()
+        model = ResNet18(num_classes=num_classes[dataset])
     elif model_name == "QResNet12":
         model = QResNet12(bits_quantization)
     elif model_name == "QResNet18":
@@ -67,14 +72,16 @@ def server_fn(context: Context):
             dataset=dataset,
             alpha=alpha,
             batch_size=batch_size,
+            learning_rate=learning_rate,
             model=model_name,
             epochs=client_epochs,
             enable_pruning=enable_pruning,
             pruning_rate=pruning_rate,
             enable_quantization=enable_quantization,
             bits_quantization=bits_quantization,
-            layer_quantization=layer_quantization,
+            layer_compression=layer_compression,
             init_space_quantization=init_space_quantization,
+            full_compression=full_compression,
             number=number,
             save_online=save_online,
             save_local=save_local,

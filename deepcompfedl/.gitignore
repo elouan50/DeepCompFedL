@@ -161,3 +161,4 @@ cython_debug/
 
 # Saves folder
 saves/*
+encodings/*

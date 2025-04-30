@@ -72,6 +72,6 @@ class ResNet(nn.Module):
         out = self.fc(out)
         return out
 
-def ResNet18():
-    return ResNet(ResidualBlock)
+def ResNet18(num_classes=10):
+    return ResNet(ResidualBlock, num_classes)
 
