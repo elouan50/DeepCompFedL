@@ -1,30 +1,31 @@
 #!/bin/bash
 
-# We want to make a variation on the pruning rate and the number of clients epochs
+# For the FCP experiments:
+# Run it in the second described scenario
 
 for number in 1 2 3
 do
-    for prate in 0.25 0.5 0.6 0.7 0.8 0.9
+    for prate in 0.0 0.2 0.4 0.5 0.6 0.9
     do
-        for qbits in 8 6 5 4 3
+        for qbits in 32 8 4
         do
             for fc in true false
             do
                 echo "Experiment with pruning rate $prate and $qbits quantization."
                 flwr run --run-config "
-                    server-rounds=50
+                    server-rounds=100
                     client-enable-pruning=true
                     pruning-rate=$prate
                     client-enable-quantization=true
                     bits-quantization=$qbits
                     full-compression=$fc
-                    model='Net'
+                    model='ResNet12'
                     dataset='FEMNIST'
-                    fraction-fit=0.4
+                    fraction-fit=0.2
                     aggregation-strategy='DeepCompFedLStrategy'
                     client-epochs=1
                     number=$number
-                    alpha=100
+                    alpha=1
                     save-online=true
                     save-local=true
                     "

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# For the FCP experiments:
+# Run it in the first described scenario
 
 for number in 1 2 3
 do

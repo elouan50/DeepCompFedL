@@ -1,19 +1,21 @@
 #!/bin/bash
 
-# We want to make a variation on the quantization and the number of clients epochs
+# For the pruning alone experiments
 
-for number in 4 5 6
+# We run it with the ResNet-12 on IID data
+
+for number in 1 2 3
 do
-    for qbits in 8 4
+    for prate in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 0.95 0.99
     do
         for epochs in 1 10
         do
             echo "Experiment with pruning rate $prate and $epochs local epochs."
             flwr run --run-config "
                                 server-rounds=100
-                                client-enable-quantization=true
-                                bits-quantization=$qbits
-                                model='QResNet12'
+                                client-enable-pruning=true
+                                pruning-rate=$prate
+                                model='ResNet12'
                                 fraction-fit=0.4
                                 aggregation-strategy='DeepCompFedLStrategy'
                                 client-epochs=$epochs

@@ -39,11 +39,11 @@ class ResidualBlock(nn.Module):
         return out
 
 class ResNet(nn.Module):
-    def __init__(self, ResidualBlock, num_classes=10):
+    def __init__(self, ResidualBlock, input_shape: tuple = (3,32,32), num_classes=10):
         super(ResNet, self).__init__()
         self.inchannel = 64
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv2d(input_shape[0], 64, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(64),
             nn.ReLU()
         )
@@ -72,6 +72,6 @@ class ResNet(nn.Module):
         out = self.fc(out)
         return out
 
-def ResNet18(num_classes=10):
-    return ResNet(ResidualBlock, num_classes)
+def ResNet18(input_shape: tuple = (3,32,32), num_classes=10):
+    return ResNet(ResidualBlock, input_shape, num_classes)
 
