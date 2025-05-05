@@ -192,7 +192,7 @@ class DeepCompFedLStrategy(FedAvg):
         
         if save_online:
             wandb.init(
-                project=f"deepcompfedl-femnist-net",
+                project=f"deepcompfedl-projectname",
                 name=self.id,
                 config={
                     "aggregation-strategy": "DeepCompFedLStrategy",
