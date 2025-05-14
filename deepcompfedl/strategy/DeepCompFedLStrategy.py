@@ -254,11 +254,13 @@ class DeepCompFedLStrategy(FedAvg):
         
         input_shape = {"MNIST": (1, 28, 28), "MNIST": (1, 28, 28), "FEMNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32), "ImageNet": (3, 64, 64)}
         num_classes = {"MNIST": 10, "EMNIST": 10, "FEMNIST": 62, "CIFAR-10": 10, "ImageNet": 200}
+        
+        avg_size = 0
 
         if self.full_compression:
             old_results = results
             results = []
-            
+
             if self.model == "Net":
                 model = Net(input_shape=input_shape[self.dataset], num_classes=num_classes[self.dataset])
             elif self.model == "QResNet12":
@@ -273,9 +275,14 @@ class DeepCompFedLStrategy(FedAvg):
             for _, fit_res in old_results:
                 cl_id = parameters_to_ndarrays(fit_res.parameters)[0].item()
                 net = huffman_decode_model(model, f"deepcompfedl/encodings/p{self.pruning_rate}-q{self.bits_quantization}/cl{cl_id}/")
+                avg_size += os.stat(f"deepcompfedl/encodings/p{self.pruning_rate}-q{self.bits_quantization}/cl{cl_id}/").st_size
                 parameters = ndarrays_to_parameters(get_weights(net))
                 results.append((_, FitRes(fit_res.status, parameters, fit_res.num_examples, fit_res.metrics)))
             
+            avg_size = avg_size / 1000 / len(old_results)
+        
+        self.end_decode = time.perf_counter()
+
         if self.inplace:
             # Does in-place weighted average of results
             aggregated_ndarrays = aggregate_inplace(results)
@@ -337,6 +344,7 @@ class DeepCompFedLStrategy(FedAvg):
             aggregate_fit_time = self.end_round - self.begin_aggregate_fit
             
             overhead = (round_time - (configure_fit_time + aggregate_fit_time + metrics_aggregated["training-time"] + metrics_aggregated["compression-time"])) / round_time
+            metrics_aggregated["model-size"] = avg_size
             metrics_aggregated["round-time"] = round_time
             metrics_aggregated["communication-overhead"] = overhead
             
