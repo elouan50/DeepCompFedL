@@ -24,6 +24,7 @@ def server_fn(context: Context):
     fraction_fit = context.run_config["fraction-fit"]
     aggregation_strategy = context.run_config["aggregation-strategy"]
     model_name = context.run_config["model"]
+    project_name = context.run_config["project-name"]
     enable_pruning = context.run_config["server-enable-pruning"]
     enable_quantization = context.run_config["server-enable-quantization"]
     pruning_rate = context.run_config["pruning-rate"]
@@ -74,6 +75,7 @@ def server_fn(context: Context):
             batch_size=batch_size,
             learning_rate=learning_rate,
             model=model_name,
+            project_name=project_name,
             epochs=client_epochs,
             enable_pruning=enable_pruning,
             pruning_rate=pruning_rate,

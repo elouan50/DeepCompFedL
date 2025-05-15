@@ -136,6 +136,7 @@ class DeepCompFedLStrategy(FedAvg):
         batch_size: int = 32,
         learning_rate: float = 0.01,
         model: str = "",
+        project_name: str = "deepcompfedl-experiment",
         epochs: int = 1,
         enable_pruning: bool = False,
         pruning_rate: float = 0.,
@@ -192,7 +193,7 @@ class DeepCompFedLStrategy(FedAvg):
         
         if save_online:
             wandb.init(
-                project=f"deepcompfedl-projectname",
+                project=project_name,
                 name=self.id,
                 config={
                     "aggregation-strategy": "DeepCompFedLStrategy",

@@ -45,6 +45,7 @@ init-space-quantization = "uniform"
 full-compression = false
 model = "Net"
 dataset = "CIFAR-10"
+project-name = "deepcompfedl-experiment"
 fraction-fit = 0.4
 alpha=100
 batch-size = 8
