@@ -244,7 +244,7 @@ class DeepCompFedLStrategy(FedAvg):
     ) -> Tuple[Optional[Parameters], Dict[str, Scalar]]:
         """Aggregate fit results using weighted average."""
         
-        self.begin_aggregate_fit = time.perf_counter()
+        begin_aggregate_fit = time.perf_counter()
         
         if not results:
             return None, {}
@@ -281,7 +281,7 @@ class DeepCompFedLStrategy(FedAvg):
             
             avg_size = avg_size / 1000 / len(old_results)
         
-        self.end_decode = time.perf_counter()
+        end_decode = time.perf_counter()
 
         if self.inplace:
             # Does in-place weighted average of results
@@ -306,7 +306,7 @@ class DeepCompFedLStrategy(FedAvg):
 
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
-        self.end_round = time.perf_counter()
+        end_round = time.perf_counter()
         
         # Save the model if it's the last round
         if server_round == self.num_rounds and self.save_local:
@@ -339,14 +339,14 @@ class DeepCompFedLStrategy(FedAvg):
             fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
             
-            round_time = self.end_round - self.begin_round
+            round_time = end_round - self.begin_round
             configure_fit_time = self.end_configure_fit - self.begin_round
-            aggregate_fit_time = self.end_round - self.begin_aggregate_fit
             
-            overhead = (round_time - (configure_fit_time + aggregate_fit_time + metrics_aggregated["training-time"] + metrics_aggregated["compression-time"])) / round_time
             metrics_aggregated["model-size"] = avg_size
-            metrics_aggregated["round-time"] = round_time
-            metrics_aggregated["communication-overhead"] = overhead
+            metrics_aggregated["t_select"] = configure_fit_time
+            metrics_aggregated["t_decode"] = end_decode - begin_aggregate_fit
+            metrics_aggregated["t_aggregate"] = end_round - end_decode
+            metrics_aggregated["t_round"] = round_time
             
             # Save the metrics online
             if self.save_online:
