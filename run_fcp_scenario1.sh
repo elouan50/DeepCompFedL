@@ -47,5 +47,4 @@ do
     done
 done
 
-
-
+python3 ./deepcompfedl/tests/plot_figures/plotnfit_scenario1.py

@@ -12,6 +12,14 @@ import wandb
 api = wandb.Api()
 project = "elouan50-rwth-aachen-university/deepcompfedl-scenario1"
 
+print("---------------------------")
+print("------  Scenario 1  -------")
+print("---------------------------")
+print("")
+print("Model: ResNet-12")
+print("Dataset: CIFAR-10")
+print("IID data")
+print("")
 
 # Baseline init
 size = np.zeros((1,100))
