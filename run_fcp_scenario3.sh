@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # For the FCP experiments:
-# Run it in the second described scenario
+# Run it in the third described scenario
 
 for number in 1 2 3
 do
@@ -20,7 +20,7 @@ do
                     bits-quantization=$qbits
                     full-compression=$fc
                     model='ResNet12'
-                    dataset='FEMNIST'
+                    dataset='CIFAR-10'
                     fraction-fit=0.2
                     aggregation-strategy='DeepCompFedLStrategy'
                     client-epochs=1
