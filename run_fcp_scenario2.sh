@@ -4,6 +4,8 @@
 # Run it in the second described scenario
 # Dataset: FEMNIST ; IID
 
+# Make sure to have 10 clients (to be set in pyproject.toml)
+
 # Baseline
 for number in 1 2 3
 do
