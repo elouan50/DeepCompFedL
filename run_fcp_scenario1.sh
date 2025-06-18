@@ -30,7 +30,9 @@ do
     do
         for prate in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 0.95
         do
-            echo "Experiment with quantization on $qbits bits and 1 local epochs."
+            echo "NEW EXPERIMENT"
+            echo "Pruning rate: $prate"
+            echo "Quantization bits: $qbits"
             flwr run --run-config "
                 server-rounds=100
                 aggregation-strategy='DeepCompFedLStrategy'
