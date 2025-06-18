@@ -2,6 +2,7 @@
 
 # For the FCP experiments:
 # Run it in the first described scenario
+# Dataset: CIFAR-10 ; IID
 
 # Baseline
 for number in 1 2 3
@@ -11,10 +12,12 @@ do
         server-rounds=100
         aggregation-strategy='DeepCompFedLStrategy'
         model='ResNet12'
+        dataset='CIFAR-10'
         fraction-fit=0.4
         client-epochs=1
         alpha=100
         number=$number
+        project-name='deepcompfedl-scenario1'
         save-online=true
         save-local=true
     "
@@ -32,6 +35,7 @@ do
                 server-rounds=100
                 aggregation-strategy='DeepCompFedLStrategy'
                 model='ResNet12'
+                dataset='CIFAR-10'
                 fraction-fit=0.4
                 client-epochs=1
                 full-compression=true
@@ -47,4 +51,5 @@ do
     done
 done
 
+# Processing the results
 python3 ./deepcompfedl/tests/plot_figures/plotnfit_scenario1.py
