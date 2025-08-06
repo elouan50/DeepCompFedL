@@ -171,6 +171,7 @@ class DeepCompFedLStrategy(FedAvg):
         self.evaluate_metrics_aggregation_fn = evaluate_metrics_aggregation_fn
         self.inplace = inplace
         self.model = model
+        self.project_name = project_name
         self.epochs = epochs
         self.num_rounds = num_rounds
         self.dataset = dataset
@@ -284,6 +285,30 @@ class DeepCompFedLStrategy(FedAvg):
         
         end_decode = time.perf_counter()
 
+        # Save all sub models for the last round
+        if server_round == self.num_rounds and self.save_local:
+            save_dir = f"deepcompfedl/saves/{self.project_name}-p{self.pruning_rate}-q{self.bits_quantization}-n{self.number}"
+
+            os.makedirs(save_dir, exist_ok=True)
+            
+            if self.model == "ResNet18":
+                model = ResNet18()
+            elif self.model == "ResNet12":
+                model = ResNet12(input_shape=input_shape[self.dataset], num_classes=num_classes[self.dataset])
+            elif self.model == "QResNet12":
+                model = QResNet12(self.bits_quantization)
+            elif self.model == "QResNet18":
+                model = QResNet18(self.bits_quantization)
+            else:
+                log(WARNING, "Model couldn't be saved")
+                return None, {}
+
+            for _, fit_res in results:
+                cl_id = parameters_to_ndarrays(fit_res.parameters)[0].item()
+                set_weights(model, parameters_to_ndarrays(fit_res.parameters))
+                torch.save(model, f"{save_dir}/{cl_id}.ptmodel")
+        
+        # Aggregate the results
         if self.inplace:
             # Does in-place weighted average of results
             aggregated_ndarrays = aggregate_inplace(results)
@@ -311,7 +336,7 @@ class DeepCompFedLStrategy(FedAvg):
         
         # Save the model if it's the last round
         if server_round == self.num_rounds and self.save_local:
-            save_dir = f"deepcompfedl/saves/{self.model.lower()}-r{self.num_rounds}-bs8"
+            save_dir = f"deepcompfedl/saves/{self.model.lower()}-r{self.num_rounds}"
 
             os.makedirs(save_dir, exist_ok=True)
             
