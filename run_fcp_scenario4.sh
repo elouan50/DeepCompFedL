@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # For the FCP experiments:
-# Run it in the second described scenario
-# Dataset: FEMNIST ; IID
+# Run it in the fourth described scenario
+# Dataset: FEMNIST ; non-IID
 
-# Make sure to have 10 clients (to be set in pyproject.toml)
+# Make sure to have 100 clients (to be set in pyproject.toml)
 
 # Baseline
 for number in 1 2 3
@@ -15,11 +15,11 @@ do
         aggregation-strategy='DeepCompFedLStrategy'
         model='ResNet12'
         dataset='FEMNIST'
-        fraction-fit=0.4
+        fraction-fit=0.2
         client-epochs=1
-        alpha=100
+        alpha=1
         number=$number
-        project-name='deepcompfedl-scenario2'
+        project-name='deepcompfedl-scenario4'
         save-online=true
         save-local=true
     "
@@ -40,14 +40,14 @@ do
                 aggregation-strategy='DeepCompFedLStrategy'
                 model='ResNet12'
                 dataset='FEMNIST'
-                fraction-fit=0.4
+                fraction-fit=0.2
                 client-epochs=1
                 full-compression=true
                 pruning-rate=$prate
                 bits-quantization=$qbits
-                alpha=100
+                alpha=1
                 number=$number
-                project-name='deepcompfedl-scenario2'
+                project-name='deepcompfedl-scenario4'
                 save-online=true
                 save-local=true
             "
@@ -56,4 +56,4 @@ do
 done
 
 # Processing the results
-python3 ./deepcompfedl/tests/plot_figures/plotnfit_scenario2.py
+python3 ./deepcompfedl/tests/plot_figures/plotnfit_scenario4.py

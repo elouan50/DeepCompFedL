@@ -45,6 +45,7 @@ init-space-quantization = "uniform"
 full-compression = false
 model = "Net"
 dataset = "CIFAR-10"
+project-name = "deepcompfedl-experiment"
 fraction-fit = 0.4
 alpha=100
 batch-size = 8
@@ -57,6 +58,6 @@ save-local = true
 default = "local-simulation"
 
 [tool.flwr.federations.local-simulation]
-options.num-supernodes = 10
-options.backend.client-resources.num-cpus = 32 # the number of available CPUs
-options.backend.client-resources.num-gpus = 1
+options.num-supernodes = 10                     # number of available clients
+options.backend.client-resources.num-cpus = 32  # the number of available CPUs
+options.backend.client-resources.num-gpus = 1   # the number of available GPUs

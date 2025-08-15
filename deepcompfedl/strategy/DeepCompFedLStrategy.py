@@ -136,6 +136,7 @@ class DeepCompFedLStrategy(FedAvg):
         batch_size: int = 32,
         learning_rate: float = 0.01,
         model: str = "",
+        project_name: str = "deepcompfedl-experiment",
         epochs: int = 1,
         enable_pruning: bool = False,
         pruning_rate: float = 0.,
@@ -170,6 +171,7 @@ class DeepCompFedLStrategy(FedAvg):
         self.evaluate_metrics_aggregation_fn = evaluate_metrics_aggregation_fn
         self.inplace = inplace
         self.model = model
+        self.project_name = project_name
         self.epochs = epochs
         self.num_rounds = num_rounds
         self.dataset = dataset
@@ -192,7 +194,7 @@ class DeepCompFedLStrategy(FedAvg):
         
         if save_online:
             wandb.init(
-                project=f"deepcompfedl-projectname",
+                project=project_name,
                 name=self.id,
                 config={
                     "aggregation-strategy": "DeepCompFedLStrategy",
@@ -244,7 +246,7 @@ class DeepCompFedLStrategy(FedAvg):
     ) -> Tuple[Optional[Parameters], Dict[str, Scalar]]:
         """Aggregate fit results using weighted average."""
         
-        self.begin_aggregate_fit = time.perf_counter()
+        begin_aggregate_fit = time.perf_counter()
         
         if not results:
             return None, {}
@@ -254,11 +256,13 @@ class DeepCompFedLStrategy(FedAvg):
         
         input_shape = {"MNIST": (1, 28, 28), "MNIST": (1, 28, 28), "FEMNIST": (1, 28, 28), "CIFAR-10": (3, 32, 32), "ImageNet": (3, 64, 64)}
         num_classes = {"MNIST": 10, "EMNIST": 10, "FEMNIST": 62, "CIFAR-10": 10, "ImageNet": 200}
+        
+        avg_size = 0
 
         if self.full_compression:
             old_results = results
             results = []
-            
+
             if self.model == "Net":
                 model = Net(input_shape=input_shape[self.dataset], num_classes=num_classes[self.dataset])
             elif self.model == "QResNet12":
@@ -273,9 +277,39 @@ class DeepCompFedLStrategy(FedAvg):
             for _, fit_res in old_results:
                 cl_id = parameters_to_ndarrays(fit_res.parameters)[0].item()
                 net = huffman_decode_model(model, f"deepcompfedl/encodings/p{self.pruning_rate}-q{self.bits_quantization}/cl{cl_id}/")
+                avg_size += os.stat(f"deepcompfedl/encodings/p{self.pruning_rate}-q{self.bits_quantization}/cl{cl_id}/").st_size
                 parameters = ndarrays_to_parameters(get_weights(net))
                 results.append((_, FitRes(fit_res.status, parameters, fit_res.num_examples, fit_res.metrics)))
             
+            avg_size = avg_size / 1000 / len(old_results)
+        
+        end_decode = time.perf_counter()
+
+        # Save all sub models for the last round
+        if server_round == self.num_rounds and self.save_local and self.full_compression:
+            save_dir = f"deepcompfedl/saves/{self.project_name}-p{self.pruning_rate}-q{self.bits_quantization}-n{self.number}"
+
+            os.makedirs(save_dir, exist_ok=True)
+            
+            if self.model == "ResNet18":
+                model = ResNet18()
+            elif self.model == "ResNet12":
+                model = ResNet12(input_shape=input_shape[self.dataset], num_classes=num_classes[self.dataset])
+            elif self.model == "QResNet12":
+                model = QResNet12(self.bits_quantization)
+            elif self.model == "QResNet18":
+                model = QResNet18(self.bits_quantization)
+            else:
+                log(WARNING, "Model couldn't be saved")
+                return None, {}
+
+            cl_id = 0
+            for _, fit_res in results:
+                set_weights(model, parameters_to_ndarrays(fit_res.parameters))
+                torch.save(model, f"{save_dir}/{cl_id}.ptmodel")
+                cl_id += 1
+        
+        # Aggregate the results
         if self.inplace:
             # Does in-place weighted average of results
             aggregated_ndarrays = aggregate_inplace(results)
@@ -299,11 +333,11 @@ class DeepCompFedLStrategy(FedAvg):
 
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
-        self.end_round = time.perf_counter()
+        end_round = time.perf_counter()
         
         # Save the model if it's the last round
         if server_round == self.num_rounds and self.save_local:
-            save_dir = f"deepcompfedl/saves/{self.model.lower()}-r{self.num_rounds}-bs8"
+            save_dir = f"deepcompfedl/saves/{self.model.lower()}-r{self.num_rounds}"
 
             os.makedirs(save_dir, exist_ok=True)
             
@@ -332,13 +366,14 @@ class DeepCompFedLStrategy(FedAvg):
             fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
             
-            round_time = self.end_round - self.begin_round
+            round_time = end_round - self.begin_round
             configure_fit_time = self.end_configure_fit - self.begin_round
-            aggregate_fit_time = self.end_round - self.begin_aggregate_fit
             
-            overhead = (round_time - (configure_fit_time + aggregate_fit_time + metrics_aggregated["training-time"] + metrics_aggregated["compression-time"])) / round_time
-            metrics_aggregated["round-time"] = round_time
-            metrics_aggregated["communication-overhead"] = overhead
+            metrics_aggregated["model-size"] = avg_size
+            metrics_aggregated["t_select"] = configure_fit_time
+            metrics_aggregated["t_decode"] = end_decode - begin_aggregate_fit
+            metrics_aggregated["t_aggregate"] = end_round - end_decode
+            metrics_aggregated["t_round"] = round_time
             
             # Save the metrics online
             if self.save_online:

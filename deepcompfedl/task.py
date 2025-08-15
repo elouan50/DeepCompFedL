@@ -143,11 +143,11 @@ def fit_metrics_aggregation_fn(fit_metrics):
     train_losses_aggregated = sum(weighted_train_losses) / num_total_fit_examples
     
     # Training time
-    weighted_training_times = [num_examples * metrics["training-time"] for num_examples, metrics in fit_metrics]
+    weighted_training_times = [num_examples * metrics["t_train"] for num_examples, metrics in fit_metrics]
     training_times_aggregated = sum(weighted_training_times) / num_total_fit_examples
     
     # Compression time
-    weighted_compression_times = [num_examples * metrics["compression-time"] for num_examples, metrics in fit_metrics]
+    weighted_compression_times = [num_examples * metrics["t_compress"] for num_examples, metrics in fit_metrics]
     compression_times_aggregated = sum(weighted_compression_times) / num_total_fit_examples
     
-    return {"training-time": float(training_times_aggregated), "train-loss": float(train_losses_aggregated), "compression-time": float(compression_times_aggregated)}
+    return {"t_train": float(training_times_aggregated), "train-loss": float(train_losses_aggregated), "t_compress": float(compression_times_aggregated)}
