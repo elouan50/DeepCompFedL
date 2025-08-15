@@ -286,7 +286,7 @@ class DeepCompFedLStrategy(FedAvg):
         end_decode = time.perf_counter()
 
         # Save all sub models for the last round
-        if server_round == self.num_rounds and self.save_local:
+        if server_round == self.num_rounds and self.save_local and self.full_compression:
             save_dir = f"deepcompfedl/saves/{self.project_name}-p{self.pruning_rate}-q{self.bits_quantization}-n{self.number}"
 
             os.makedirs(save_dir, exist_ok=True)
@@ -303,10 +303,11 @@ class DeepCompFedLStrategy(FedAvg):
                 log(WARNING, "Model couldn't be saved")
                 return None, {}
 
+            cl_id = 0
             for _, fit_res in results:
-                cl_id = parameters_to_ndarrays(fit_res.parameters)[0].item()
                 set_weights(model, parameters_to_ndarrays(fit_res.parameters))
                 torch.save(model, f"{save_dir}/{cl_id}.ptmodel")
+                cl_id += 1
         
         # Aggregate the results
         if self.inplace:
