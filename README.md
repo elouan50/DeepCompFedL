@@ -1,10 +1,11 @@
 # DeepCompFedL
 > Apply Deep Compression Techniques to Federated Learning, in order to save energy and computation power.
 
-This work was realized during my Master's Thesis. It aims to provide an experimental setup which allows to apply various compression techniques to a Federated Learning framework.
+This work was realized during and after my Master's Thesis. It aims to provide an experimental setup which allows to apply various compression techniques to a Federated Learning framework.
 
 Feel free to contact me for any questions, and to fork this repository to improve it yourself.
 
+---
 ## Install dependencies and project
 
 All the code was written and executed in a Linux environment (`Ubuntu Mate 22.04`), with a `Python 3.10` version.
@@ -15,16 +16,18 @@ Requirements for the <i>Flower Framework</i> can be found in the `pyproject.toml
 pip install -e .
 ```
 
-If you also want to use the interface, you'll need to install a `tkinter` package (not accessible via `pip`). For a Linux distribution, you can download it with:
+If you also want to use the interface[^1], you'll need to install a `tkinter` package (not accessible via `pip`). For a Linux distribution, you can download it with:
 ```bash
 sudo apt install python3-tk
 ```
+[^1]: This feature wasn't updated for a long time and isn't garanteed to work.
 
-<i>Note: use of such in-built interface is not recommanded, but I did it here for simplicity reasons. It would be better to build an API and a front-end application.</i>
+[^2]: Use of such in-built interface is not recommanded, but I did it here for didactical reasons. For a similar experience, it would be better to build an API and a front-end application.</i>
 
 
 In the adapted strategy file `./deepcompfedl/strategy/DeepCompFedLStrategy.py`, in the `__init__()`, `aggregate_fit()` and `aggregate_evaluate()` methods you'll find `wandb` calls. It is very useful for reporting online the results of the experiments you in a very user-friendly interface. If you want to use it, set the option save-online to true in the `pyproject.toml`. If you do so, you'll eventually need to connect your `wandb` account. I recommand to follow the documentation on the application own website.
 
+---
 ## Run the project
 
 To run the experiments described in my paper, execute this command (with `file_name.sh` being the file correspondign to the desired experiment):
@@ -33,7 +36,7 @@ To run the experiments described in my paper, execute this command (with `file_n
 sh file_name.sh
 ```
 
-Elsewise, if you prefer to run your own experiment in a personalized setup, this project offers you two possibilities: either prepare your environment via the native framework, or with an interface I implemented myself.
+Elsewise, if you prefer to run your own experiment in a personalized setup, this project offers you two possibilities: either prepare your environment via the native framework _(recommanded)_, or with an interface I implemented myself.
 
 ### Run the native framework with the Simulation Engine
 
@@ -47,7 +50,7 @@ Arguments can be modified in the `pyproject.toml` file, or passed manually withi
 
 Additionally, run `flwr run --help` for more informations.
 
-### Run the framework starting from the interface
+### Run the framework starting from the interface[^2]
 
 The interface allows to modify parameters in a more intuitive manner.
 
@@ -56,7 +59,7 @@ In the `DeepCompFedL` directory, execute the `interface.py` file:
 python3 interface.py
 ```
 
-
+---
 ## Troubleshooting
 
 It might be that at the first execution, you get such an Exception: `Exception ClientAppException occured. Message: module 'PIL.Image' has no attribute 'ExifTags'`. If so, simply update the package `pillow` by executing this command:
@@ -85,4 +88,4 @@ Beware also with `wandb` use, you can't run two experiments with the same id wit
 
 This project was developed on the basis of the [Flower Framework](https://flower.ai/docs/framework/index.html).
 
-Many functions are inspired from the work of Lucas Grativol ([here](https://github.com/lgrativol/fl_exps/), implementation of [his paper](https://ieeexplore.ieee.org/abstract/document/10382717)), and an implementation of [this paper](https://arxiv.org/abs/1510.00149) available [here](https://github.com/mightydeveloper/Deep-Compression-PyTorch).
+Compression functions are inspired from the work of Lucas Grativol ([here](https://github.com/lgrativol/fl_exps/), implementation of [his paper](https://ieeexplore.ieee.org/abstract/document/10382717)), and an implementation of [this paper](https://arxiv.org/abs/1510.00149) available [here](https://github.com/mightydeveloper/Deep-Compression-PyTorch).
