@@ -133,7 +133,7 @@ class DeepCompFedLStrategy(FedAvg):
         num_rounds: int = 3,
         dataset: str = "",
         alpha: int | bool = 100,
-        batch_size: int = 32,
+        batch_size: int = 8,
         learning_rate: float = 0.01,
         model: str = "",
         project_name: str = "deepcompfedl-experiment",

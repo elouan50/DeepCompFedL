@@ -2,3 +2,4 @@ wandb
 .vscode
 .pytest_cache
 output*
+*.log
